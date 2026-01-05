@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<!-- JS 파일 연결 -->
+<script src="script.js" defer></script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카페인Yeon</title>
+    
+    <!-- 외부 CSS 파일 연결 -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <!-- 클릭 시 index.html(홈)로 이동하도록 설정 -->
+        <h1><a href="index.html" class="logo-link">카페인Yeon</a></h1>
+    </header>
+
+    <nav>
+        <button class="tab-button" onclick="showTab('cdm-tab')">CDM</button>
+        <button class="tab-button" onclick="showTab('board-tab')">게시판</button>
+        <button class="tab-button" onclick="showTab('ledger-tab')">장부</button>
+    </nav>
+    
+    <div id="detail-popup" class="detail-popup hidden">
+        <button class="popup-close">✕</button>
+        <div id="popup-content"></div>
+    </div>
+
+</body>
+
+<!-- 탭 콘텐츠 영역 -->
+<main style="margin-top: 20px; width: 100%; max-width: 600px;">
+    
+    <div id="cdm-tab" class="tab-content">
+
+        <!-- 원두 섹션 -->
+        <div id="bean-section">
+            <h2>원두</h2>
+            <div id="bean-list" class="item-grid"></div>
+            <button id="add-bean-btn" onclick="openAddForm('bean')">+</button>
+        </div>
+        
+        <!-- 레시피 섹션 -->
+        <div id="recipe-section">
+            <h2>레시피</h2>
+            <div id="recipe-list" class="item-grid"></div>
+            <button id="add-recipe-btn" onclick="openAddForm('recipe')">+</button>
+        </div>
+
+        <!-- 공용 추가 폼 -->
+        <div id="add-item-form" style="display:none; border:1px solid #ccc; padding:15px; margin-top:15px;">
+            <h3 id="form-title"></h3>
+        
+            <input type="text" id="item-name" placeholder="이름" style="width:90%;"><br><br>
+            <textarea id="item-info" placeholder="정보" style="width:90%; height:60px;"></textarea><br><br>
+        
+            <button id="save-item-btn">저장</button>
+            <button id="cancel-item-btn">취소</button>
+        </div>    
+    </div>
+
+
+    <!-- 2. 게시판 탭 콘텐츠 (임시) -->
+    <div id="board-tab" class="tab-content" style="display: none;">
+        <h2>게시판</h2>
+        <p>부원들의 활동 소식을 공유하는 공간입니다.</p>
+    </div>
+
+    <!-- 3. 장부 탭 콘텐츠 (임시) -->
+    <div id="ledger-tab" class="tab-content" style="display: none;">
+        <h2>장부</h2>
+        <p>원두 및 장비 구입 비용 공동 지불 내역을 관리합니다.</p>
+    </div>
+
+</main>
+
+</html>

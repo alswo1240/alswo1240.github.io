@@ -1,0 +1,165 @@
+/* css/style.css */
+
+/* 1. 기초 스타일링: 화면 중앙 정렬 및 배경색 설정 */
+body {
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center; 
+    margin: 0;
+    padding: 20px;
+    background-color: #f9f9f9;
+}
+
+/* 2. 타이틀(로고) 스타일: 카페인Yeon 디자인 */
+header h1 {
+    margin-bottom: 30px;
+}
+
+.logo-link {
+    text-decoration: none; /* 밑줄 제거 */
+    color: #5d4037;        /* 커피 느낌의 갈색 */
+    cursor: pointer;
+}
+
+/* 3. 내비게이션 바 스타일: cdm, 게시판, 장부 탭 */
+nav {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    justify-content: space-around;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 15px 0;
+    text-align: center;
+    color: #333;
+    font-weight: bold;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.tab-button:hover {
+    background-color: #efebe9;
+}
+
+/* 4. 반응형 설정: 모바일 화면 대응 */
+@media (max-width: 480px) {
+    header h1 { font-size: 1.5rem; }
+    .tab-button { padding: 10px 0; font-size: 0.9rem; }
+}
+
+/* 별점 스타일*/ 
+.star-rating {
+    font-size: 24px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.star {
+    color: #ccc;
+    transition: color 0.2s;
+}
+
+.star.active {
+    color: #ff9800;
+}
+
+/* 2열 레이아웃 */
+.item-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* 카드 스타일 */
+.item-card {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 12px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.item-card:hover {
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+}
+
+.item-card strong {
+    font-size: 14px;
+}
+
+/* 상세 정보 영역 */
+.item-detail {
+    margin-top: 8px;
+    background: #f5f5f5;
+    padding: 8px;
+    border-radius: 6px;
+}
+
+.item-grid {
+    margin-bottom: 20px;
+}
+
+.detail-popup {
+    position: absolute;
+    width: 320px;
+    background: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    z-index: 1000;
+}
+
+.detail-popup.hidden {
+    display: none;
+}
+
+.popup-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    border: none;
+    background: none;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.add-card {
+    cursor: default;
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.card-title-input {
+    font-size: 16px;
+    padding: 6px;
+}
+
+.card-description-input {
+    resize: vertical;
+    min-height: 80px;
+    padding: 6px;
+}
+
+.card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
