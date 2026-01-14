@@ -1,12 +1,13 @@
 /* css/style.css */
 
 /* 1. 기초 스타일링: 화면 중앙 정렬 및 배경색 설정 */
+
 body {
     font-family: 'Arial', sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
-    text-align: center; 
+    text-align: center;
     margin: 0;
     padding: 20px;
     background-color: #f9f9f9;
@@ -15,12 +16,6 @@ body {
 /* 2. 타이틀(로고) 스타일: 카페인Yeon 디자인 */
 header h1 {
     margin-bottom: 30px;
-}
-
-.logo-link {
-    text-decoration: none; /* 밑줄 제거 */
-    color: #5d4037;        /* 커피 느낌의 갈색 */
-    cursor: pointer;
 }
 
 /* 3. 내비게이션 바 스타일: cdm, 게시판, 장부 탭 */
@@ -33,6 +28,14 @@ nav {
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     overflow: hidden;
+}
+
+#cdm-title {
+    margin-bottom: 28px;
+}
+
+.tab-content {
+    display: flex;
 }
 
 .tab-button {
@@ -163,3 +166,476 @@ nav {
     justify-content: flex-end;
     gap: 8px;
 }
+
+/* 로그인 화면 전용 */
+
+.auth-root {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 로그인 화면 전용 */
+#auth-root {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: 90vh;
+}
+
+.auth-container {
+    width: 300px;
+    padding: 30px;
+    border: 2px solid #ccc;
+    text-align: center;
+}
+
+.auth-container input {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+/* 앱 화면 전용 */
+#app-root {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    width : 100%;
+    padding: 20px;
+}
+
+.logo {
+    cursor: pointer;
+    text-decoration: none; /* 밑줄 제거 */
+    color: #5d4037;   
+    margin-bottom: 20px;
+}
+
+.error {
+    color: red;
+    font-size: 0.9em;
+}
+
+.app-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    position: relative;
+}
+
+/* 로고를 정확히 중앙 */
+.app-header .logo {
+    grid-column: 2;
+    justify-self: center;
+}
+
+/* 로그아웃 버튼을 우측 */
+#logout-btn {
+    grid-column: 3;
+    justify-self: end;
+}
+
+.hidden {
+    display: none;
+}
+
+.review-item {
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.review-card {
+    background-color: #f1f1f1;
+    padding: 0.1px 18px;
+    padding-top: 13px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.info-card {
+    padding: 0.1px 18px;
+}
+
+#bean-section {
+    background-color: #f1f1f1;
+    padding: 1px 18px;
+    padding-bottom: 19px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+#recipe-section {
+    background-color: #f1f1f1;
+    padding: 1px 18px;
+    padding-bottom: 19px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.item-actions {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.item-actions button {
+    flex: 1;
+}
+
+.review-date {
+    font-size: 0.8em;
+    color: #777;
+    margin-left: 6px;
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.review-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.info-date {
+    font-size: 0.8em;
+    color: #777;
+    margin-left: 6px;
+}
+
+.my-section {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.profile-image-wrapper {
+    position: relative;
+    width: 200px;
+    height: 200px;
+}
+
+.profile-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    background-color: #eee;
+}
+
+.profile-upload-btn {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75em;
+    background: #fff;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.profile-name {
+    font-size: 20px;
+    margin-top: 25px;
+    font-weight: bold;
+}
+
+.review-masonry {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    max-width: 700px;
+    width: 100%;
+    margin-top: 14px;
+}
+
+.my-review-card {
+    break-inside: avoid;
+    background-color: #f2f2f2;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 2px;
+    text-align: left;
+}
+
+.my-review-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.my-review-date {
+    font-size: 0.8em;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+/* 원두 / 레시피 탭 */
+.review-type-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+/* 정렬 토글 */
+.sort-dropdown {
+    position: relative;
+    padding-left: 10px;
+}
+
+#sort-toggle {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.sort-menu {
+    position: absolute;
+    right: 0;
+    top: 110%;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    min-width: 90px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 10;
+}
+
+.sort-menu div {
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+.sort-menu div:hover {
+    background-color: #f0f0f0;
+}
+
+.empty-message {
+    grid-column: 1 / -1;   /* ⭐ 핵심 */
+    text-align: center;
+    color: #777;
+    margin-top: 20px;
+}
+
+.post-item {
+    padding: 12px;
+    background: #f3f3f3;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    cursor: pointer;
+}
+
+.post-item h3 {
+    margin: 0 0 6px;
+}
+
+.post-meta {
+    font-size: 0.85em;
+    color: #888;
+    margin-bottom: 12px;
+}
+
+.post-content {
+    margin: 12px 0;
+    text-align: left;
+    padding-left: 25px;
+    padding-right: 25px;
+}
+
+.post-title {
+    margin: 8px 0;
+}
+.board-header {
+    margin-bottom: 15px;
+}
+
+#editor-content {
+    min-height: 300px;
+    padding: 14px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+#add-post-btn {
+    margin-bottom: 15px;
+}
+
+#post-container {
+    background-color: #f1f1f1;
+    padding-top: 15px;
+    padding-bottom: 10px;
+    border-radius: 8px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+#detail-meta {
+    font-size: 14px;
+    color: #666;
+}
+
+.editor-container {
+    display: flex;
+    flex-direction: column;
+    margin: 10px; 
+    gap: 12px;
+}
+
+#editor-content {
+    resize: none;
+}
+
+/* 정렬 토글 */
+.board-sort {
+    position: relative;
+    display: inline-block;
+}
+
+#board-sort-toggle {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+#board-sort-menu {
+    position: absolute;
+    right: 0;
+    top: 110%;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    min-width: 90px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 10;
+}
+
+#board-sort-menu div {
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+#board-sort-menu div:hover {
+    background-color: #f0f0f0;
+}
+
+#post-category {
+    display: inline-block;
+    font-size: 12px;
+    padding: 2px 8px;
+    background: #eaeaea;
+    border-radius: 12px;
+    margin-top: 12px;
+    margin-bottom: 0.1px;
+}
+
+.post-category {
+    display: inline-block;
+    font-size: 12px;
+    padding: 2px 8px;
+    background: #eaeaea;
+    border-radius: 12px;
+    margin-bottom: 6px;
+}
+
+.editor-category,
+.board-category-filter {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.editor-category button.active,
+.board-category-filter button.active {
+    background: #333;
+    color: #fff;
+    border-radius: 3px;
+}
+
+.preserve-line {
+    white-space: pre-wrap;
+}
+
+.post-image {
+    width: 100%;
+    border-radius: 8px;
+    margin: 12px 0;
+}
+
+.image-preview-list {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.image-preview {
+    position: relative;
+}
+
+.image-preview img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.post-images {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.post-images img {
+    max-width: 300px;
+    height: auto;
+    object-fit: contain;
+}
+
+.image-preview button {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #000;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+    .post-images img {
+        max-width: 100%;
+    }
+}
+
