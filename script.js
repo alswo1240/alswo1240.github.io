@@ -1,11 +1,10 @@
 /***********************
  * 사용자 세션
  ***********************/
-let currentUser = localStorage.getItem('currentUser');
-if (!currentUser) {
-    currentUser = 'user_' + Date.now();
-    localStorage.setItem('currentUser', currentUser);
-}
+
+let authUsername;
+let authPassword;
+let authError;
 
 let currentPopupItem = null;
 
@@ -36,11 +35,11 @@ let openFormRef = null;
  * 초기 로드
  ***********************/
 async function init() {
-    beans = await DataStore.load('beans');
-    recipes = await DataStore.load('recipes');
+    beans = await DataStore.load('beans') || [];
+    recipes = await DataStore.load('recipes') || [];
     renderAll();
+    showTab('cdm-tab');
 }
-init();
 
 /***********************
  * DOM
@@ -51,6 +50,162 @@ const popupCloseBtn = popup.querySelector('.popup-close');
 popup.onclick = e => e.stopPropagation();
 popupCloseBtn.onclick = () => popup.classList.add('hidden');
 document.addEventListener('click', () => popup.classList.add('hidden'));
+
+function getCurrentUser() {
+    return getSession()?.username || null;
+}
+
+// 계정 인증 로직
+function getUsers() {
+    return JSON.parse(localStorage.getItem("users") || "[]");
+}
+
+function saveUsers(users) {
+    localStorage.setItem("users", JSON.stringify(users));
+}
+
+function setSession(username) {
+    localStorage.setItem("session", JSON.stringify({ username }));
+}
+
+function getSession() {
+    return JSON.parse(localStorage.getItem("session"));
+}
+
+function clearSession() {
+    localStorage.removeItem("session");
+}
+
+function showLogin() {
+    hideAllAuthForms();
+    document.getElementById("login-form").classList.remove("hidden");
+}
+
+function showSignup() {
+    hideAllAuthForms();
+    document.getElementById("signup-form").classList.remove("hidden");
+}
+
+function backToSelect() {
+    hideAllAuthForms();
+    document.getElementById("auth-select").classList.remove("hidden");
+    authError.textContent = "";
+}
+
+function hideAllAuthForms() {
+    document.getElementById("auth-select").classList.add("hidden");
+    document.getElementById("login-form").classList.add("hidden");
+    document.getElementById("signup-form").classList.add("hidden");
+}
+
+function signup() {
+    
+    const name = document.getElementById("signup-name").value.trim();
+    const username = document.getElementById("signup-username").value.trim();
+    const password = document.getElementById("signup-password").value.trim();
+    const confirm_pw = document.getElementById("signup-password-confirm").value.trim();
+
+    if (!name || !username || !password || !confirm) {
+        authError.textContent = "모든 항목을 입력하세요.";
+        return;
+    }
+
+    if (password !== confirm_pw) {
+        authError.textContent = "비밀번호가 일치하지 않습니다.";
+        return;
+    }
+
+    const users = getUsers();
+    if (users.find(u => u.username === username)) {
+        authError.textContent = "이미 존재하는 아이디입니다.";
+        return;
+    }
+
+    const ok = confirm("회원가입 하시겠습니까?");
+    if (!ok) return;
+
+    users.push({
+        name,
+        username,
+        password
+    });
+    
+    saveUsers(users);
+    setSession(username);
+    enterApp();
+}
+
+function login() {
+    const username = document.getElementById("login-username").value.trim();
+    const password = document.getElementById("login-password").value.trim();
+
+    if (!username || !password) {
+        authError.textContent = "아이디와 비밀번호를 입력하세요.";
+        return;
+    }
+
+    const users = getUsers();
+    const user = users.find(
+        u => u.username === username && u.password === password
+    );
+
+    if (!user) {
+        authError.textContent = "로그인 정보가 올바르지 않습니다.";
+        return;
+    }
+
+    setSession(username);
+    enterApp();
+}
+
+function logout() {
+    const ok = confirm("로그아웃 하시겠습니까?");
+    if (!ok) return;
+
+    clearSession();
+
+    // 홈 → 로그인 화면 전환
+    document.getElementById("app-root").style.display = "none";
+    document.getElementById("auth-root").style.display = "flex";
+}
+
+function enterApp() {
+    document.getElementById("auth-root").style.display = "none";
+    document.getElementById("app-root").style.display = "flex";
+
+    init();
+}
+
+function showAuth() {
+    document.getElementById("auth-root").classList.remove("hidden");
+    document.getElementById("app-root").classList.add("hidden");
+}
+
+// 로그아웃
+document.addEventListener("DOMContentLoaded", () => {
+    const logoutBtn = document.getElementById("logout-btn");
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", logout);
+    }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    // auth DOM 참조 초기화
+    //authUsername = document.getElementById("auth-username");
+    //authPassword = document.getElementById("auth-password");
+    authError = document.getElementById("auth-error");
+
+    const session = getSession();
+
+    if (session) {
+        // 유효한 로그인 세션이 있을 때만 진입
+        enterApp();
+    } else {
+        // 로그인 화면만 표시
+        showAuth();
+        backToSelect();
+    }
+});
 
 /***********************
  * 리스트 렌더링
@@ -128,6 +283,7 @@ function openAddForm(type) {
 async function saveAddForm(type) {
     const name = document.getElementById('add-name').value.trim();
     const info = document.getElementById('add-info').value.trim();
+    const date = getTodayDate();
 
     if (!name) return alert('이름을 입력하세요.');
 
@@ -135,6 +291,7 @@ async function saveAddForm(type) {
         id: Date.now(),
         name,
         info,
+        date,
         reviews: {}
     };
 
@@ -163,18 +320,135 @@ function openPopup(cardEl, itemData, type) {
 }
 
 function renderPopupContent(itemData, type) {
-    const review = itemData.reviews[currentUser];
+    const currentUser = getCurrentUser();
+    const reviews = itemData.reviews || {};
+
+    let reviewsHtml = '';
+
+    const reviewEntries = Object.entries(reviews);
+
+    if (reviewEntries.length === 0) {
+        reviewsHtml = '<p>아직 리뷰가 없습니다.</p>';
+    } else {
+        reviewEntries.forEach(([username, review]) => {
+            reviewsHtml += `
+                <div class="review-item">
+                    <div class="review-card">
+                    <div class="review-header">
+                        <div class="review-left">
+                            <strong>${getUserNameById(username)}</strong>
+                            <span class="review-rating">${'⭐'.repeat(review.rating)}</span>
+                        </div>
+                        <span class="review-date">${review.date}</span>
+                    </div>
+            
+                    <p class="review-text preserve-line">${review.text}</p>
+                </div>
+                    ${
+                        username === currentUser
+                            ? `
+                                <div class="review-actions">
+                                    <button onclick="openReviewForm(${itemData.id}, '${type}')">
+                                        리뷰 수정
+                                    </button>
+                                    <button class="danger"
+                                        onclick="deleteReview(${itemData.id}, '${type}')">
+                                        삭제
+                                    </button>
+                                </div>
+                              `
+                            : ''
+                    }
+                </div>
+            `;
+        });
+    }
+
+    const canWriteReview = currentUser && !reviews[currentUser];
 
     popupContent.innerHTML = `
-        <p>${itemData.info}</p>
+        <div class="info-card">
+            <h3>${itemData.name}</h3>
+            <span class="info-date">${itemData.date}</span>
+            <p class="preserve-line">${itemData.info}</p>
+        </div>
+
+        <!-- 🔧 아이템 관리 버튼 -->
+        <div class="item-actions">
+            <button onclick="openEditItemForm(${itemData.id}, '${type}')">수정</button>
+            <button onclick="deleteItem(${itemData.id}, '${type}')">삭제</button>
+        </div>
+
+        <hr>
+
+        <h4>리뷰</h4>
+        ${reviewsHtml}
+
         ${
-            review
-                ? `<p>내 리뷰: ${'⭐'.repeat(review.rating)}</p>
-                   <p>${review.text}</p>
-                   <button onclick="openReviewForm(${itemData.id}, '${type}')">리뷰 수정</button>`
-                : `<button onclick="openReviewForm(${itemData.id}, '${type}')">리뷰 남기기</button>`
+            canWriteReview
+                ? `<button onclick="openReviewForm(${itemData.id}, '${type}')">
+                       리뷰 남기기
+                   </button>`
+                : ''
         }
     `;
+}
+
+function openEditItemForm(id, type) {
+    const list = type === 'bean' ? beans : recipes;
+    const item = list.find(i => i.id === id);
+    if (!item) return;
+
+    // 기존 add 폼 재사용
+    openAddForm(type);
+
+    const form = openFormRef.element;
+
+    const nameInput = form.querySelector('#add-name');
+    const infoInput = form.querySelector('#add-info');
+    const saveBtn = form.querySelector('#add-save');
+
+    // ✅ 기존 값 주입
+    nameInput.value = item.name;
+    infoInput.value = item.info;
+
+    // ✅ 저장 버튼 동작 덮어쓰기 (push ❌)
+    saveBtn.onclick = () => {
+        const name = nameInput.value.trim();
+        const info = infoInput.value.trim();
+        if (!name) return;
+
+        item.name = name;
+        item.info = info;
+        item.date = getTodayDate() + '(수정됨)';
+
+        if (!confirm("수정한 내용을 저장하시겠습니까?")) return;
+
+        if (type === 'bean') {
+            DataStore.save('beans', beans);
+        } else {
+            DataStore.save('recipes', recipes);
+        }
+        renderAll();
+        openFormRef.type = 'add';
+        closeOpenForm();
+        
+    };
+}
+
+function deleteItem(id, type) {
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+
+    if (type === 'bean') {
+        beans = beans.filter(b => b.id !== id);
+        DataStore.save('beans', beans);
+    } else {
+        recipes = recipes.filter(r => r.id !== id);
+        DataStore.save('recipes', recipes);
+    }
+    
+    popup.classList.add('hidden');
+    renderAll();
 }
 
 /***********************
@@ -218,7 +492,14 @@ async function saveReview(id, type) {
     const text = popupContent.querySelector('#review-text').value.trim();
     if (!rating || !text) return alert('모두 입력');
 
-    item.reviews[currentUser] = { rating, text };
+    const currentUser = getCurrentUser();
+    if (!currentUser) return alert("로그인이 필요합니다.");
+
+    const date = item.reviews && item.reviews[currentUser] ? item.reviews[currentUser].date + '(수정됨)' : getTodayDate();
+    const reviewId = item.reviews && item.reviews[currentUser] ? item.reviews[currentUser].id : Date.now();
+    
+    item.reviews[currentUser] = { id: reviewId, rating, text,  date }
+
     await DataStore.save(type === 'bean' ? 'beans' : 'recipes', list);
 
     closeReviewForm();
@@ -231,9 +512,42 @@ async function saveReview(id, type) {
     if (card) openPopup(card, item, type);
 }
 
+function deleteReview(itemId, type) {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+
+    const items = type === 'bean' ? beans : recipes;
+    const item = items.find(i => i.id === itemId);
+    if (!item || !item.reviews) return;
+
+    const ok = confirm("리뷰를 삭제하시겠습니까?");
+    if (!ok) return;
+
+    // ⭐ 리뷰 삭제
+    delete item.reviews[currentUser];
+
+    // 저장
+    DataStore.save(type === 'bean' ? 'beans' : 'recipes', items);
+
+    // UI 즉시 반영
+    renderAll();
+    renderPopupContent(item, type);
+}
+
+function getTodayDate() {
+    return new Date().toISOString().slice(0, 10);
+}
+
 function closeReviewForm() {
     const f = popupContent.querySelector('.review-form');
     if (f) f.remove();
+}
+
+// 사용자 id로 이름 참조
+function getUserNameById(username) {
+    const users = getUsers(); // localStorage에서 users 불러오는 기존 함수
+    const user = users.find(u => u.username === username);
+    return user ? user.name : username; // fallback
 }
 
 /***********************
@@ -297,8 +611,569 @@ function showTab(tabId) {
         target.style.display = 'block';
     }
 
+    if (tabId === 'mymenu-tab') {
+
+        // ✅ 리뷰 정렬 상태 초기화
+        myReviewSort = 'date';
+    
+        // ✅ 정렬 토글 텍스트 초기화
+        const toggle = document.getElementById('sort-toggle');
+        if (toggle) toggle.textContent = '최신순 ▾';
+
+        initProfile();
+        renderMyReviews();
+    }
+
+    // 탭 이동 시
+    if (tabId === 'board-tab') {
+        // ✅ 상태 초기화
+        boardCategoryFilter = 'all';
+        boardSort = 'latest';
+
+        document.querySelectorAll('.board-category-filter button')
+            .forEach(btn => btn.classList.remove('active'));
+
+        document.querySelector(
+            '.board-category-filter button[data-category="all"]'
+        )?.classList.add('active');
+        
+        // ✅ 토글 텍스트 초기화
+        const toggle = document.getElementById('board-sort-toggle');
+        if (toggle) toggle.textContent = '최신순 ▾';
+    
+        // ✅ 항상 목록 화면부터
+        showBoardView('list');
+    
+        // ✅ 최신순 기준으로 다시 렌더
+        renderPostList();
+    }
+
     // 클릭한 버튼 활성화
     const activeBtn = [...document.querySelectorAll('.tab-button')]
         .find(btn => btn.getAttribute('onclick')?.includes(tabId));
     if (activeBtn) activeBtn.classList.add('active');
 }
+
+// 로고 버튼 클릭 시 새로고침
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".reload-logo").forEach(logo => {
+        logo.addEventListener("click", () => {
+            location.reload();
+        });
+    });
+});
+
+function initProfile() {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+
+    const users = getUsers();
+    const user = users.find(u => u.username === currentUser);
+    if (!user) return;
+
+    const imgEl = document.getElementById('profile-image');
+    const nameEl = document.getElementById('profile-name');
+
+    nameEl.textContent = user.name;
+
+    if (user.profileImage) {
+        imgEl.src = user.profileImage;
+    } else {
+        imgEl.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%23eee"/></svg>';
+    }
+}
+
+document.getElementById('profile-upload').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+        const dataUrl = reader.result;
+
+        const currentUser = getCurrentUser();
+        const users = getUsers();
+        const user = users.find(u => u.username === currentUser);
+        if (!user) return;
+
+        user.profileImage = dataUrl;
+        saveUsers(users);
+
+        document.getElementById('profile-image').src = dataUrl;
+    };
+
+    reader.readAsDataURL(file);
+});
+
+let myReviewType = 'bean';   // 'bean' | 'recipe'
+let myReviewSort = 'date';  // 'date' | 'rating'
+
+function collectMyReviewsByType(type) {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return [];
+
+    const source = type === 'bean' ? beans : recipes;
+    const results = [];
+
+    source.forEach(item => {
+        if (item.reviews && item.reviews[currentUser]) {
+            const review = item.reviews[currentUser];
+            results.push({
+                itemName: item.name,
+                id: review.id,
+                rating: review.rating,
+                text: review.text,
+                date: review.date
+            });
+        }
+    });
+
+    return results;
+}
+
+function sortMyReviews(reviews) {
+    if (myReviewSort === 'rating') {
+        return reviews.sort((a, b) => b.rating - a.rating);
+    }
+    // 최신순
+    return reviews.sort((a, b) => b.id - a.id);
+}
+
+function renderMyReviews() {
+    const grid = document.getElementById('my-reviews-grid');
+    if (!grid) return;
+
+    let reviews = collectMyReviewsByType(myReviewType);
+    reviews = sortMyReviews(reviews);
+
+    if (reviews.length === 0) {
+        grid.innerHTML = '<p class="empty-message">작성한 리뷰가 없습니다.</p>';
+        return;
+    }
+
+    grid.innerHTML = '';
+
+    reviews.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'my-review-card';
+
+        card.innerHTML = `
+            <div class="my-review-header">
+                <span>${r.itemName}</span>
+                <span>${'⭐'.repeat(r.rating)}</span>
+            </div>
+            <div class="my-review-date">${r.date}</div>
+            <div class="preserve-line">${r.text}</div>
+        `;
+
+        grid.appendChild(card);
+    });
+}
+
+document.querySelectorAll('.review-type-tabs button').forEach(btn => {
+    btn.onclick = () => {
+        myReviewType = btn.dataset.type;
+        setActive(btn, '.review-type-tabs');
+        renderMyReviews();
+    };
+});
+
+document.getElementById('sort-toggle').addEventListener('click', e => {
+    e.stopPropagation(); // ⭐ 이 줄만 추가
+    document.getElementById('sort-menu').classList.toggle('hidden');
+});
+
+document.addEventListener('click', () => {
+    document.getElementById('sort-menu').classList.add('hidden');
+});
+
+document.querySelectorAll('#sort-menu div').forEach(option => {
+    option.addEventListener('click', () => {
+        myReviewSort = option.dataset.sort;
+
+        updateSortToggleText(); // ⭐ 추가
+        
+        document.getElementById('sort-menu').classList.add('hidden');
+        renderMyReviews();
+    });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateSortToggleText();
+});
+
+function setActive(activeBtn, selector) {
+    document.querySelectorAll(`${selector} button`)
+        .forEach(b => b.classList.remove('active'));
+    activeBtn.classList.add('active');
+}
+
+function updateSortToggleText() {
+    const toggle = document.getElementById('sort-toggle');
+
+    toggle.textContent =
+        myReviewSort === 'rating' ? '별점순 ▾' : '최신순 ▾';
+}
+
+/* ===== 게시글 데이터 ===== */
+
+let currentPage = 'detail';
+let editorMode = 'add';      // 'add' | 'edit'
+let editingPostId = null;
+let currentPostId = null;
+
+let editorTitle;
+let editorContent;
+
+function loadPosts() {
+    return JSON.parse(localStorage.getItem('posts') || '[]');
+}
+
+function savePosts(posts) {
+    localStorage.setItem('posts', JSON.stringify(posts));
+}
+
+function getPostById(id) {
+    return loadPosts().find(p => p.id === id);
+}
+
+function resetBoardView() {
+    // 내부 상태 초기화
+    editorMode = 'add';
+    editingPostId = null;
+    currentPostId = null;
+
+    // 목록 화면만 표시
+    document.getElementById('board-list-view').classList.remove('hidden');
+    document.getElementById('board-detail-view').classList.add('hidden');
+    document.getElementById('board-editor-view').classList.add('hidden');
+
+    renderPostList();
+}
+
+function renderPostList() {
+    const list = document.getElementById('post-list');
+    let posts = loadPosts();
+    
+    posts = sortPosts(posts);
+
+    if (boardCategoryFilter !== 'all') {
+        posts = posts.filter(
+            p => p.category === boardCategoryFilter
+        );
+    }
+
+    if (posts.length === 0) {
+        list.innerHTML = '<p class="empty-message">게시글이 없습니다.</p>';
+        return;
+    }
+
+    list.innerHTML = '';
+
+    posts.forEach(post => {
+        const div = document.createElement('div');
+        div.className = 'post-item';
+
+        div.onclick = () => {
+            openPostDetail(post.id);
+        };
+
+        div.innerHTML = `
+            <div class="post-category">${getCategoryLabel(post.category)}</div>
+            <h3>${post.title}</h3>
+            <p class="post-meta">${getUserNameById(post.author)} · ${post.createdAt}</p>
+        `;
+
+        list.appendChild(div);
+    });
+}
+
+function openPostDetail(postId) {
+    const post = getPostById(postId);
+    if (!post) return;
+
+    currentPostId = postId;
+    showBoardView('detail');
+
+    const container = document.getElementById('post-container');
+    const imagesHTML = post.images?.length
+        ? post.images.map(img => `<img src="${img}" class="post-image">`).join('')
+        : '';
+    
+    container.innerHTML = `
+        <div class="post-category">${getCategoryLabel(post.category)}</div>
+        <h2 class="post-title">${post.title}</h2>
+        <p class="post-meta">${getUserNameById(post.author)} · ${post.createdAt}</p>
+        <div class="post-images">${imagesHTML}</div>
+        <div class="post-content preserve-line">${post.content}</div>
+    `;
+
+    const isAuthor = getCurrentUser() === post.author;
+
+    document.getElementById('edit-post-btn').style.display =
+        isAuthor ? 'inline-block' : 'none';
+    document.getElementById('delete-post-btn').style.display =
+        isAuthor ? 'inline-block' : 'none';
+}
+
+window.addEventListener('popstate', e => {
+    if (!e.state || e.state.view !== 'post') {
+        // 목록 화면으로 복귀
+        currentPage='list';
+        showBoardView(currentPage);
+        renderPostList();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (location.hash.startsWith('#post-')) {
+        const postId = Number(location.hash.replace('#post-', ''));
+        openPostDetail(postId);
+    }
+});
+
+
+function deletePost(id) {
+    if (!confirm('게시글을 삭제할까요?')) return;
+
+    const posts = loadPosts().filter(p => p.id !== id);
+    savePosts(posts);
+
+    renderPostList();
+    showBoardView('list');
+}
+
+function showBoardView(view) {
+    currentPage = view;
+    ['list', 'detail', 'editor'].forEach(v => {
+        document
+            .getElementById(`board-${v}-view`)
+            .classList.add('hidden');
+    });
+
+    document
+        .getElementById(`board-${view}-view`)
+        .classList.remove('hidden');
+}
+
+document.getElementById('add-post-btn').onclick = () => {
+    openPostEditor();
+};
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    editorTitle = document.getElementById('editor-title');
+    editorContent = document.getElementById('editor-content');
+});
+
+function goBack() {
+    if (currentPage === 'editor' && editorMode === 'edit') {
+        currentPage = 'detail';
+        openPostDetail(editingPostId);
+    } else {
+        currentPage = 'list';
+        showBoardView(currentPage);
+    }
+}
+
+function openPostEditor(post = null) {
+    currentPage = 'editor';
+    showBoardView(currentPage);
+
+    editorImages = [];
+    document.getElementById('editor-image-preview').innerHTML = '';
+    document.getElementById('editor-image').value = '';
+    
+    if (post) {
+        editorMode = 'edit';
+        editingPostId = post.id;
+
+        editorTitle.value = post.title;
+        editorContent.value = post.content;
+        selectedPostCategory = post.category;
+        
+        if (post.images?.length) {
+            editorImages = [...post.images];
+            renderEditorImages();
+        }
+        
+    } else {
+        editorMode = 'add';
+        editingPostId = null;
+
+        editorTitle.value = '';
+        editorContent.value = '';
+        selectedPostCategory = 'notice';
+    }
+    
+    document.querySelectorAll('.editor-category button').forEach(btn => {
+        btn.classList.toggle(
+            'active',
+            btn.dataset.category === selectedPostCategory
+        );
+    });
+}
+
+document.getElementById('edit-post-btn').onclick = () => {
+    const post = getPostById(currentPostId);
+    openPostEditor(post);
+};
+
+document.getElementById('delete-post-btn').onclick = () => {
+    const post = getPostById(currentPostId);
+    deletePost(post.id);
+};
+
+document.getElementById('save-post-btn').onclick = () => {
+    const title = editorTitle.value.trim();
+    const content = editorContent.value.trim();
+
+    if (!title || !content) {
+        alert('제목과 내용을 입력하세요.');
+        return;
+    }
+
+    const posts = loadPosts();
+
+    if (editorMode === 'add') {
+        const postId = Date.now();
+        currentPostId = postId;
+        posts.push({
+            id: postId,
+            title,
+            content,
+            images: editorImages,
+            category: selectedPostCategory,
+            author: getCurrentUser(),
+            createdAt: getTodayDate()
+        });
+    } else {
+        const post = posts.find(p => p.id === editingPostId);
+        post.title = title;
+        post.content = content;
+        post.images = editorImages;
+        post.category = selectedPostCategory;
+        post.createdAt = getTodayDate() + '(수정됨)';
+        post.updatedAt = getTodayDate();
+    }
+
+    savePosts(posts);
+    renderPostList();
+    currentPage = 'detail';
+    openPostDetail(currentPostId);
+};
+
+let boardSort = 'latest'; // 'latest' | 'oldest'
+
+function sortPosts(posts) {
+    if (boardSort === 'oldest') {
+        return posts.sort((a, b) => a.id - b.id);
+    }
+    // 최신순 (기본)
+    return posts.sort((a, b) => b.id - a.id);
+}
+
+const boardSortToggle = document.getElementById('board-sort-toggle');
+const boardSortMenu = document.getElementById('board-sort-menu');
+
+boardSortToggle.onclick = (e) => {
+    e.stopPropagation();
+    boardSortMenu.classList.toggle('hidden');
+};
+
+document.querySelectorAll('#board-sort-menu div').forEach(opt => {
+    opt.onclick = () => {
+        boardSort = opt.dataset.sort;
+        boardSortToggle.textContent =
+            boardSort === 'latest' ? '최신순 ▾' : '오래된순 ▾';
+
+        boardSortMenu.classList.add('hidden');
+        renderPostList();
+    };
+});
+
+document.addEventListener('click', () => {
+    boardSortMenu.classList.add('hidden');
+});
+
+let selectedPostCategory = 'notice';
+
+document.querySelectorAll('.editor-category button').forEach(btn => {
+    btn.onclick = () => {
+        selectedPostCategory = btn.dataset.category;
+
+        document
+            .querySelectorAll('.editor-category button')
+            .forEach(b => b.classList.remove('active'));
+
+        btn.classList.add('active');
+    };
+});
+
+let boardCategoryFilter = 'all';
+
+document
+    .querySelectorAll('.board-category-filter button')
+    .forEach(btn => {
+        btn.onclick = () => {
+            boardCategoryFilter = btn.dataset.category;
+
+            document
+                .querySelectorAll('.board-category-filter button')
+                .forEach(b => b.classList.remove('active'));
+
+            btn.classList.add('active');
+            renderPostList();
+        };
+    });
+
+function getCategoryLabel(category) {
+    return {
+        notice: '공지',
+        suggestion: '건의',
+        ledger: '장부',
+        free: '자유'
+    }[category] || '';
+}
+
+let editorImageData = null;
+
+document.getElementById('editor-image').addEventListener('change', e => {
+    const files = Array.from(e.target.files);
+
+    files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            editorImages.push(reader.result);
+            renderEditorImages();
+        };
+        reader.readAsDataURL(file);
+    });
+
+    e.target.value = ''; // 🔴 중요: 같은 파일 재선택 가능
+});
+
+let editorImages = []; // 현재 편집 중 이미지 배열
+
+function renderEditorImages() {
+    const container = document.getElementById('editor-image-preview');
+    container.innerHTML = '';
+
+    editorImages.forEach((img, index) => {
+        const div = document.createElement('div');
+        div.className = 'image-preview';
+
+        div.innerHTML = `
+            <img src="${img}">
+            <button onclick="removeEditorImage(${index})">×</button>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+function removeEditorImage(index) {
+    editorImages.splice(index, 1);
+    renderEditorImages();
+}
+
