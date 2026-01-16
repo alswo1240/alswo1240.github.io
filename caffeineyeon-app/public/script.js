@@ -663,8 +663,6 @@ let previousViewState = null;
 
 // 탭 전환 함수
 function showTab(tabId) {
-    closePopup();
-
     currentTabId = tabId;
     
     // 모든 탭 숨기기
