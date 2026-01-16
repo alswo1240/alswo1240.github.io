@@ -10,6 +10,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const db = openDb();
 
+app.set('trust proxy', 1);
+
 app.use(express.json({ limit: '10mb' })); // allow base64 images
 
 // Session cookie (in-memory store). For small club use it's OK.
@@ -21,7 +23,7 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production'
+      secure: 'auto'
     }
   })
 );
