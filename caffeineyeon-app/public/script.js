@@ -454,10 +454,6 @@ function renderPopupContent(itemData, type) {
     `;
 }
 
-const popup = document.getElementById('detail-popup');
-const popupContent = document.getElementById('popup-content');
-const popupCloseBtn = document.getElementById('popup-close'); // X 버튼 id에 맞게 수정
-
 function closePopup() {
   if (!popup) return;
 
