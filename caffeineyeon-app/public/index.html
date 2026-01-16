@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카페인Yeon</title>
+    
+    <!-- 외부 CSS 파일 연결 -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 로그인 / 회원가입 화면 -->
+<div id="auth-root">
+    <div class="auth-container">
+        <h1 class="logo reload-logo">카페인Yeon</h1>
+    
+        <!-- 1️⃣ 초기 선택 화면 -->
+        <div id="auth-select">
+            <button onclick="showLogin()">로그인</button>
+            <button onclick="showSignup()">회원가입</button>
+        </div>
+    
+        <!-- 2️⃣ 로그인 폼 -->
+        <div id="login-form" class="hidden">
+            <input id="login-username" placeholder="아이디">
+            <input id="login-password" type="password" placeholder="비밀번호">
+    
+            <button onclick="login()">로그인</button>
+            <button onclick="backToSelect()">뒤로</button>
+        </div>
+    
+        <!-- 3️⃣ 회원가입 폼 -->
+        <div id="signup-form" class="hidden">
+            <input id="signup-name" placeholder="이름">
+            <input id="signup-username" placeholder="아이디">
+            <input id="signup-password" type="password" placeholder="비밀번호">
+            <input id="signup-password-confirm" type="password" placeholder="비밀번호 확인">
+    
+            <button onclick="signup()">회원가입</button>
+            <button onclick="backToSelect()">뒤로</button>
+        </div>
+    </div>
+
+    <p id="auth-error" class="error"></p>
+</div>
+
+
+<!-- 홈 화면 전체 -->
+<div id="app-root" style="display: none;">
+
+    <header class="app-header">
+        <h1 class="logo reload-logo">카페인Yeon</h1>
+        <button id="logout-btn">로그아웃</button>
+    </header>
+
+    <nav id="navigation-bar">
+        <button class="tab-button" onclick="showTab('cdm-tab')">CDM</button>
+        <button class="tab-button" onclick="showTab('board-tab')">게시판</button>
+        <button class="tab-button" onclick="showTab('mymenu-tab')">마이메뉴</button>
+    </nav>
+    
+    <div id="detail-popup" class="detail-popup hidden">
+        <button class="popup-close">✕</button>
+        <div id="popup-content"></div>
+    </div>
+    
+    <!-- 탭 콘텐츠 영역 -->
+    <main style="margin-top: 20px; width: 100%; max-width: 600px;">
+        
+        <div id="cdm-tab" class="tab-content">
+        <p id="cdm-title">☕️ Coffee Data Management ☕️</p>
+            <!-- 원두 섹션 -->
+            <div id="bean-section">
+                <h2>원두</h2>
+                <div id="bean-list" class="item-grid"></div>
+                <button id="add-bean-btn" onclick="openAddForm('bean')">+</button>
+            </div>
+            
+            <!-- 레시피 섹션 -->
+            <div id="recipe-section">
+                <h2>레시피</h2>
+                <div id="recipe-list" class="item-grid"></div>
+                <button id="add-recipe-btn" onclick="openAddForm('recipe')">+</button>
+            </div>
+    
+            <!-- 공용 추가 폼 -->
+            <div id="add-item-form" style="display:none; border:1px solid #ccc; padding:15px; margin-top:15px;">
+                <h3 id="form-title"></h3>
+            
+                <input type="text" id="item-name" placeholder="이름" style="width:90%;"><br><br>
+                <textarea id="item-info" placeholder="정보" style="width:90%; height:60px;"></textarea><br><br>
+            
+                <button id="save-item-btn">저장</button>
+                <button id="cancel-item-btn">취소</button>
+            </div>    
+        </div>
+    
+    
+        <!-- 2. 게시판 탭 콘텐츠 -->
+        <div id="board-tab" class="tab-content" style="display:none;">
+        
+            <section id="board-list-view">
+                <div class="board-category-filter">
+                    <button data-category="all" class="active">전체</button>
+                    <button data-category="notice">공지</button>
+                    <button data-category="suggestion">건의</button>
+                    <button data-category="ledger">장부</button>
+                    <button data-category="free">자유</button>
+                </div>
+                <button id="add-post-btn">글쓰기</button>
+                <div class="board-sort">
+                    <button id="board-sort-toggle">최신순 ▾</button>
+                    <div id="board-sort-menu" class="hidden">
+                        <div data-sort="latest">최신순</div>
+                        <div data-sort="oldest">오래된순</div>
+                    </div>
+                </div>
+                <div id="post-list"></div>
+            </section>
+        
+            <section id="board-detail-view" class="hidden">
+                <button onclick="goBack()">← 목록</button>
+                <div id="post-container"></div>
+            
+                <button id="edit-post-btn">수정</button>
+                <button id="delete-post-btn">삭제</button>
+            </section>
+            
+            <section id="board-editor-view" class="hidden">
+                <button onclick="goBack()">← 뒤로</button>
+                <div class="editor-category">
+                    <button data-category="notice" class="active">공지</button>
+                    <button data-category="suggestion">건의</button>
+                    <button data-category="ledger">장부</button>
+                    <button data-category="free">자유</button>
+                </div>
+                <div class="editor-container">
+                    <input id="editor-title" placeholder="제목" />
+                    <textarea id="editor-content" placeholder="내용"></textarea>
+                    <input type="file" id="editor-image" accept="image/*" multiple>
+                    <div id="editor-image-preview" class="image-preview-list"></div>
+                </div>
+                <button id="save-post-btn">저장</button>
+            </section>
+
+        
+        </div>
+    
+        <!-- 3. 마이메뉴 탭 콘텐츠 -->
+        <div id="mymenu-tab" class="tab-content" style="display: none;">
+            <!-- 프로필 섹션 -->
+            <div id="profile-section" class="my-section">
+                <div class="profile-image-wrapper">
+                    <img id="profile-image" src="" alt="프로필 사진">
+                    <label for="profile-upload" class="profile-upload-btn hidden" id="profile-upload-btn">
+                        사진 변경
+                    </label>
+                    <input type="file" id="profile-upload" accept="image/*" hidden>
+                </div>
+                <div class="profile-header">
+                    <p id="profile-name" class="profile-name"></p>
+                
+                    <div class="profile-menu">
+                        <span id="profile-menu-btn">···</span>
+                        <div id="profile-menu-dropdown" class="hidden">
+                            <div id="edit-profile-btn">정보 수정</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <!-- 나의 리뷰 섹션 -->
+            <div id="my-reviews-section" class="my-section">
+                <h3>나의 리뷰</h3>
+            
+                <div class="review-header">
+                    <div class="review-type-tabs">
+                        <button class="tab active" data-type="bean">원두</button>
+                        <button class="tab" data-type="recipe">레시피</button>
+                    </div>
+                
+                    <div class="sort-dropdown">
+                        <button id="sort-toggle">정렬 ▾</button>
+                        <div id="sort-menu" class="sort-menu hidden">
+                            <div data-sort="latest">최신순</div>
+                            <div data-sort="rating">별점순</div>
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- 리뷰 카드 -->
+                <div id="my-reviews-grid" class="review-masonry"></div>
+            </div>
+            <!-- 회원 정보 수정 섹션 -->
+            <div id="profile-edit-section" class="my-section hidden">
+                <h3>회원 정보 수정</h3>
+            
+                <input id="edit-name" placeholder="이름">
+                <input id="edit-username" placeholder="아이디">
+
+                <input id="current-password" type="password" placeholder="현재 비밀번호">
+                <input id="new-password" type="password" placeholder="새 비밀번호">
+                <input id="new-password-confirm" type="password" placeholder="새 비밀번호 확인">
+            
+                <div class="edit-actions">
+                    <button id="save-profile-btn">수정</button>
+                    <button id="cancel-profile-btn">취소</button>
+                </div>
+            
+                <p id="profile-edit-error"></p>
+            </div>
+        </div>
+    
+    </main>
+</div>
+
+<!-- JS 파일 연결 -->
+<script src="script.js"></script>
+</body>
+
+</html>
