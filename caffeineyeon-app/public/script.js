@@ -376,6 +376,7 @@ function openPopup(cardEl, itemData, type) {
     popup.style.left = `${window.scrollX + rect.left}px`;
 
     renderPopupContent(itemData, type);
+    popup.style.display = 'flex';
     popup.classList.remove('hidden');
 }
 
@@ -471,6 +472,13 @@ if (popupCloseBtn) {
     e.preventDefault();
     e.stopPropagation();
     closePopup();
+  });
+}
+
+// 내부 클릭 차단 (🔥 핵심)
+if (popupContent) {
+  popupContent.addEventListener('click', (e) => {
+    e.stopPropagation();
   });
 }
 
