@@ -109,6 +109,7 @@ async function init() {
 // DOM Elements
 const popup = document.getElementById('detail-popup');
 const popupContent = document.getElementById('popup-content');
+const popupCloseBtn = document.getElementById('popup-close');
 
 function showLogin() {
     hideAllAuthForms();
@@ -451,6 +452,38 @@ function renderPopupContent(itemData, type) {
                 : ''
         }
     `;
+}
+
+const popup = document.getElementById('detail-popup');
+const popupContent = document.getElementById('popup-content');
+const popupCloseBtn = document.getElementById('popup-close'); // X 버튼 id에 맞게 수정
+
+function closePopup() {
+  if (!popup) return;
+
+  // 화면에서 숨김
+  popup.classList.remove('show');     // class 기반이면
+  popup.style.display = 'none';       // style 기반이면 둘 중 하나만 써도 됨
+
+  // 내용 정리 (원하면 유지해도 됨)
+  if (popupContent) popupContent.innerHTML = '';
+}
+
+// 1) X 버튼 클릭으로 닫기
+if (popupCloseBtn) {
+  popupCloseBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closePopup();
+  });
+}
+
+// 2) 팝업 바깥(오버레이) 클릭으로 닫기
+if (popup) {
+  popup.addEventListener('click', (e) => {
+    // "배경(오버레이)" 자체를 클릭했을 때만 닫기
+    if (e.target === popup) closePopup();
+  });
 }
 
 function openEditItemForm(id, type) {
