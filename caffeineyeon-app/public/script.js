@@ -105,6 +105,11 @@ async function init() {
 /***********************
  * DOM
  ***********************/
+
+// DOM Elements
+const popup = document.getElementById('detail-popup');
+const popupContent = document.getElementById('popup-content');
+
 function showLogin() {
     hideAllAuthForms();
     document.getElementById("login-form").classList.remove("hidden");
@@ -593,6 +598,7 @@ function getTodayDate() {
 }
 
 function closeReviewForm() {
+    if (!popupContent) return;
     const f = popupContent.querySelector('.review-form');
     if (f) f.remove();
 }
