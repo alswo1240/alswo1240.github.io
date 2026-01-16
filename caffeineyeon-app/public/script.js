@@ -109,7 +109,7 @@ async function init() {
 // DOM Elements
 const popup = document.getElementById('detail-popup');
 const popupContent = document.getElementById('popup-content');
-const popupCloseBtn = document.getElementById('popup-close');
+const popupCloseBtn = popup.querySelector('.popup-close');
 
 popup.onclick = e => e.stopPropagation();
 popupCloseBtn.onclick = () => popup.classList.add('hidden');
