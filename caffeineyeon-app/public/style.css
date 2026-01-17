@@ -698,3 +698,21 @@ nav {
     gap: 12px;
     margin-top: 10px;
 }
+
+@media (max-width: 768px) {
+  #detail-popup {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  #popup-content {
+    position: relative;
+    left: auto !important;
+    top: auto !important;
+    width: min(92vw, 420px);
+    max-height: 80vh;
+    overflow: auto;
+  }
+}
