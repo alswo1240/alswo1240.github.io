@@ -700,18 +700,43 @@ nav {
 }
 
 @media (max-width: 768px) {
-  #detail-popup {
-    align-items: center;
-    justify-content: center;
-    padding: 12px;
-  }
-
+  /* 팝업 박스 자체 */
   #popup-content {
-    position: relative;
-    left: auto !important;
-    top: auto !important;
-    width: min(92vw, 420px);
-    max-height: 80vh;
+    width: calc(100vw - 32px);  /* 기본 fallback */
+    max-width: 100%;
+    box-sizing: border-box;
     overflow: auto;
   }
+
+  /* 팝업 내부 요소들이 폭을 넘지 않게 */
+  #popup-content * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* 버튼/인풋/textarea 등도 자연스럽게 줄맞춤 */
+  #popup-content input,
+  #popup-content textarea,
+  #popup-content select,
+  #popup-content button {
+    max-width: 100%;
+  }
+
+  /* 팝업 안에서 가로 스크롤 생기는 것 방지 */
+  #popup-content {
+    overflow-x: hidden;
+  }
+  #popup-content .button-row,
+  #popup-content .actions,
+  #popup-content .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #popup-content .button-row button,
+  #popup-content .actions button {
+    flex: 1 1 120px; /* 작은 화면에서 줄바꿈 + 동일 폭 느낌 */
+  }
 }
+
