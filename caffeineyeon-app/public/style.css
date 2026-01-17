@@ -384,10 +384,8 @@ nav {
 }
 
 .my-review-header {
-    display: flex;
-    justify-content: space-between;
     font-weight: bold;
-    margin-bottom: 4px;
+    margin-bottom: 5px;
 }
 
 .my-review-date {
