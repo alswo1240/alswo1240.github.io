@@ -831,10 +831,8 @@ function renderMyReviews() {
         card.className = 'my-review-card';
 
         card.innerHTML = `
-            <div class="my-review-header">
-                <span>${r.itemName}</span>
-                <span class="my-review-date">${r.date}</span>
-            </div>
+            <div class="my-review-header">${r.itemName}</div>
+            <div class="my-review-date">${r.date}</div>
             <div class="my-review-star">${'⭐'.repeat(r.rating)}</div>
             <div class="preserve-line">${r.text}</div>
         `;
