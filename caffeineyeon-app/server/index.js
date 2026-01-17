@@ -2,13 +2,17 @@ import express from 'express';
 import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { openDb, getJSON, setJSON } from './db.js';
+
+// ✅ openDb 제거, db를 직접 import
+import { db, getJSON, setJSON } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const db = openDb();
+
+// ✅ openDb() 호출 제거 (db는 db.js에서 이미 열어둠)
+// const db = openDb();
 
 app.set('trust proxy', 1);
 
@@ -32,12 +36,12 @@ app.use(
 const DATA_KEYS = new Set(['beans', 'recipes', 'posts']);
 
 async function ensureDefaults() {
-  const users = await getJSON(db, 'users', null);
-  if (!users) await setJSON(db, 'users', []);
+  const users = await getJSON('users', null);
+  if (!users) await setJSON('users', []);
 
   for (const k of DATA_KEYS) {
-    const v = await getJSON(db, `data:${k}`, null);
-    if (!v) await setJSON(db, `data:${k}`, []);
+    const v = await getJSON(`data:${k}`, null);
+    if (!v) await setJSON(`data:${k}`, []);
   }
 }
 
@@ -60,7 +64,7 @@ app.get('/api/auth/me', async (req, res) => {
   const username = req.session?.username;
   if (!username) return res.json({ ok: true, user: null });
 
-  const users = await getJSON(db, 'users', []);
+  const users = await getJSON('users', []);
   const user = users.find(u => u.username === username);
   if (!user) {
     req.session.destroy(() => {});
@@ -75,14 +79,14 @@ app.post('/api/auth/signup', async (req, res) => {
     return res.status(400).json({ ok: false, message: '모든 항목을 입력하세요.' });
   }
 
-  const users = await getJSON(db, 'users', []);
+  const users = await getJSON('users', []);
   if (users.find(u => u.username === username)) {
     return res.status(409).json({ ok: false, message: '이미 존재하는 아이디입니다.' });
   }
 
   const newUser = { name, username, password, profileImage: null };
   users.push(newUser);
-  await setJSON(db, 'users', users);
+  await setJSON('users', users);
 
   req.session.username = username;
   res.json({ ok: true, user: sanitizeUser(newUser) });
@@ -94,7 +98,7 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(400).json({ ok: false, message: '아이디와 비밀번호를 입력하세요.' });
   }
 
-  const users = await getJSON(db, 'users', []);
+  const users = await getJSON('users', []);
   const user = users.find(u => u.username === username && u.password === password);
   if (!user) {
     return res.status(401).json({ ok: false, message: '로그인 정보가 올바르지 않습니다.' });
@@ -114,7 +118,7 @@ app.put('/api/auth/me', requireAuth, async (req, res) => {
   const username = req.session.username;
   const { name, newUsername, currentPassword, newPassword, profileImage } = req.body || {};
 
-  const users = await getJSON(db, 'users', []);
+  const users = await getJSON('users', []);
   const user = users.find(u => u.username === username);
   if (!user) return res.status(404).json({ ok: false, message: '사용자를 찾을 수 없습니다.' });
 
@@ -136,22 +140,22 @@ app.put('/api/auth/me', requireAuth, async (req, res) => {
     user.username = newUsername;
 
     // Update posts author field
-    const posts = await getJSON(db, 'data:posts', []);
+    const posts = await getJSON('data:posts', []);
     posts.forEach(p => {
       if (p.author === old) p.author = newUsername;
     });
-    await setJSON(db, 'data:posts', posts);
+    await setJSON('data:posts', posts);
 
     // Update reviews map keys in beans/recipes
     for (const type of ['beans', 'recipes']) {
-      const items = await getJSON(db, `data:${type}`, []);
+      const items = await getJSON(`data:${type}`, []);
       items.forEach(it => {
         if (it.reviews && it.reviews[old]) {
           it.reviews[newUsername] = it.reviews[old];
           delete it.reviews[old];
         }
       });
-      await setJSON(db, `data:${type}`, items);
+      await setJSON(`data:${type}`, items);
     }
 
     // Update session username
@@ -166,13 +170,13 @@ app.put('/api/auth/me', requireAuth, async (req, res) => {
     user.password = newPassword;
   }
 
-  await setJSON(db, 'users', users);
+  await setJSON('users', users);
   res.json({ ok: true, user: sanitizeUser(user) });
 });
 
 // --- Users (public, no passwords) ---
 app.get('/api/users', requireAuth, async (req, res) => {
-  const users = await getJSON(db, 'users', []);
+  const users = await getJSON('users', []);
   res.json({ ok: true, users: users.map(sanitizeUser) });
 });
 
@@ -181,7 +185,7 @@ app.get('/api/data/:type', requireAuth, async (req, res) => {
   const { type } = req.params;
   if (!DATA_KEYS.has(type)) return res.status(404).json({ ok: false, message: 'Unknown type' });
 
-  const data = await getJSON(db, `data:${type}`, []);
+  const data = await getJSON(`data:${type}`, []);
   res.json({ ok: true, data });
 });
 
@@ -193,7 +197,7 @@ app.put('/api/data/:type', requireAuth, async (req, res) => {
   if (!Array.isArray(data)) {
     return res.status(400).json({ ok: false, message: 'Body must be an array' });
   }
-  await setJSON(db, `data:${type}`, data);
+  await setJSON(`data:${type}`, data);
   res.json({ ok: true });
 });
 
@@ -209,4 +213,6 @@ app.get('*', (req, res) => {
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`CaffeineYeon server listening on ${port}`);
+  // ✅ 필요하면 DB 경로 확인 로그(원할 때만)
+  // console.log("DB PATH:", process.env.DB_PATH);
 });
