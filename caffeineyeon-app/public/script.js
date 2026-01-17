@@ -376,8 +376,9 @@ function openPopup(cardEl, itemData, type) {
     currentPopupItem = { id: itemData.id, type };
 
     const rect = cardEl.getBoundingClientRect();
-    popup.style.top = `${window.scrollY + rect.bottom + 8}px`;
-    popup.style.left = `${window.scrollX + rect.left}px`;
+    popup.style.top  = `${window.scrollY + rect.bottom + 8}px`;
+    popup.style.left = `${window.scrollX + window.innerWidth / 2}px`;
+    popup.style.transform = 'translate(-50%)';
 
     renderPopupContent(itemData, type);
     popup.classList.remove('hidden');
