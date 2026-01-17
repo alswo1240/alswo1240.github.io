@@ -72,17 +72,19 @@
         <div id="cdm-tab" class="tab-content">
         <p id="cdm-title">☕️ Coffee Data Management ☕️</p>
             <!-- 원두 섹션 -->
-            <div id="bean-section">
-                <h2>원두</h2>
-                <div id="bean-list" class="item-grid"></div>
-                <button id="add-bean-btn" onclick="openAddForm('bean')">+</button>
-            </div>
-            
-            <!-- 레시피 섹션 -->
-            <div id="recipe-section">
-                <h2>레시피</h2>
-                <div id="recipe-list" class="item-grid"></div>
-                <button id="add-recipe-btn" onclick="openAddForm('recipe')">+</button>
+            <div id="cdm-panel">
+                <div id="bean-section">
+                    <h2>원두</h2>
+                    <div id="bean-list" class="item-grid"></div>
+                    <button id="add-bean-btn" onclick="openAddForm('bean')">+</button>
+                </div>
+                
+                <!-- 레시피 섹션 -->
+                <div id="recipe-section">
+                    <h2>레시피</h2>
+                    <div id="recipe-list" class="item-grid"></div>
+                    <button id="add-recipe-btn" onclick="openAddForm('recipe')">+</button>
+                </div>
             </div>
     
             <!-- 공용 추가 폼 -->
@@ -219,5 +221,6 @@
 <!-- JS 파일 연결 -->
 <script src="script.js"></script>
 </body>
+
 
 </html>
