@@ -579,6 +579,7 @@ nav {
     display: flex;
     gap: 8px;
     margin-bottom: 10px;
+    margin-top: 12px;
 }
 
 .editor-category button.active,
@@ -643,6 +644,10 @@ nav {
 }
 
 @media (max-width: 600px) {
+    .post-images {
+        padding: 0 15px;
+    }
+    
     .post-images img {
         max-width: 100%;
     }
@@ -702,4 +707,8 @@ nav {
     align-items: center; 
     gap: 12px;
     margin-top: 10px;
+}
+
+.initial-hidden {
+  visibility: hidden;
 }
