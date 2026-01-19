@@ -245,12 +245,7 @@ function resetAuthView() {
     const error = document.getElementById('auth-error');
     if (error) error.textContent = '';
 
-    // 폼 숨김
-    document.getElementById('login-form')?.classList.add('hidden');
-    document.getElementById('signup-form')?.classList.add('hidden');
-
-    // 초기 선택 화면 표시
-    document.getElementById('auth-select')?.classList.remove('hidden');
+    backToSelect();
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -269,6 +264,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         showAuthUI();
         backToSelect();
     }
+
+    document.getElementById('auth-root').style.visibility = 'visible';
+    document.getElementById('app-root').style.visibility = 'visible';
 });
 
 /***********************
