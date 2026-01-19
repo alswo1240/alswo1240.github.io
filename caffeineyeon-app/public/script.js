@@ -3,12 +3,6 @@
  * - localStorage -> 서버(SQLite) + 세션
  ***********************/
 
-let authUsername;
-let authPassword;
-let authError;
-
-let currentPopupItem = null;
-
 // 로그인한 사용자 (서버 세션 기반)
 let me = null;              // { name, username, profileImage }
 let usersCache = [];        // [{ name, username, profileImage }]
@@ -92,6 +86,8 @@ async function init() {
 }
 
 /**************************************************** 계정 관련 *************************************************/
+
+let authError;
 
 function showLogin() {
     hideAllAuthForms();
@@ -432,6 +428,8 @@ function deleteItem(id, type) {
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~ 팝업 ~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
+let currentPopupItem = null;
+
 const popup = document.getElementById('detail-popup');
 const popupContent = document.getElementById('popup-content');
 const popupCloseBtn = popup.querySelector('.popup-close');
@@ -671,6 +669,10 @@ function initProfile() {
     }
 }
 
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~ 회원 정보 수정 ~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
+let isEditingProfile = false;
+
 // 프로필 사진 업로드
 document.getElementById('profile-upload').addEventListener('change', e => {
     const file = e.target.files[0];
@@ -694,10 +696,6 @@ document.getElementById('profile-upload').addEventListener('change', e => {
 
     reader.readAsDataURL(file);
 });
-
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~ 회원 정보 수정 ~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-
-let isEditingProfile = false;
 
 // 회원 정보 수정 드롭다운
 document.getElementById('profile-menu-btn').onclick = () => {
