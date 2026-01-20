@@ -1392,9 +1392,7 @@ function getUserNameById(username) {
 
 // 사용자 이름으로 id 참조
 function getUsernameByName(name) {
-    const users = getUsers();
-    const user = users.find(u => u.name === name);
-    console.log(user.username);
+    const user = usersCache.find(u => u.name === name);
     return user ? user.username : null;
 }
 
