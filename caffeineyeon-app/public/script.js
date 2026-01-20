@@ -469,7 +469,7 @@ function renderPopupContent(itemData, type) {
                     <div class="review-card">
                     <div class="review-header">
                         <div class="review-left">
-                            <strong>${getUserNameById(username)}</strong>
+                            <strong class="selected-user">${getUserNameById(username)}</strong>
                             <span class="review-rating">${'⭐'.repeat(review.rating)}</span>
                         </div>
                         <span class="review-date">${review.date}</span>
@@ -579,7 +579,7 @@ async function saveReview(id, type) {
     const currentUser = getCurrentUser();
     if (!currentUser) return alert("로그인이 필요합니다.");
 
-    const date = item.reviews && item.reviews[currentUser] ? item.reviews[currentUser].date + '(수정됨)' : getTodayDate();
+    const date = item.reviews && item.reviews[currentUser] ? getTodayDate() + '(수정됨)' : getTodayDate();
     const reviewId = item.reviews && item.reviews[currentUser] ? item.reviews[currentUser].id : Date.now();
     
     item.reviews[currentUser] = { id: reviewId, rating, text,  date }
@@ -649,12 +649,11 @@ function setAddButtonVisible(type, visible) {
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~ 프로필 섹션 ~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
+let selectedUser = getCurrentUser();
+
 // 프로필 새로고침
 function initProfile() {
-    const currentUser = getCurrentUser();
-    if (!currentUser) return;
-
-    const user = usersCache.find(u => u.username === currentUser);
+    const user = usersCache.find(u => u.username === selectedUser);
     if (!user) return;
 
     const imgEl = document.getElementById('profile-image');
@@ -698,10 +697,18 @@ document.getElementById('profile-upload').addEventListener('change', e => {
 });
 
 // 회원 정보 수정 드롭다운
-document.getElementById('profile-menu-btn').onclick = () => {
-    document
-        .getElementById('profile-menu-dropdown')
-        .classList.toggle('hidden');
+const toggle = document.getElementById('profile-menu-btn');
+const dropdown = document.getElementById('profile-menu-dropdown');
+
+toggle.onclick = () => {
+  const currentUser = getCurrentUser();
+
+  // 🔒 본인이 아니면 드롭다운 차단
+  if (selectedUser !== currentUser) {
+    return;
+  }
+
+  dropdown.classList.toggle('hidden');
 };
 
 // 회원 정보 수정 모드
@@ -839,9 +846,6 @@ document.getElementById('edit-profile-btn').onclick = () => {
     enterProfileEditMode();
 };
 
-const toggle = document.getElementById('profile-menu-btn');
-const dropdown = document.getElementById('profile-menu-dropdown');
-
 toggle.addEventListener('click', e => {
     e.stopPropagation();               // 문서 클릭으로 전파 차단
     //dropdown.classList.toggle('hidden');
@@ -864,15 +868,12 @@ let myReviewSort = 'date';  // 'date' | 'rating'
 
 // 나의 리뷰 수집 (종류별)
 function collectMyReviewsByType(type) {
-    const currentUser = getCurrentUser();
-    if (!currentUser) return [];
-
     const source = type === 'bean' ? beans : recipes;
     const results = [];
 
     source.forEach(item => {
-        if (item.reviews && item.reviews[currentUser]) {
-            const review = item.reviews[currentUser];
+        if (item.reviews && item.reviews[selectedUser]) {
+            const review = item.reviews[selectedUser];
             results.push({
                 itemName: item.name,
                 id: review.id,
@@ -976,6 +977,19 @@ function updateSortToggleText() {
     toggle.textContent =
         myReviewSort === 'rating' ? '별점순 ▾' : '최신순 ▾';
 }
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~ 다른 사용자의 마이메뉴 조회 ~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
+popupContent.addEventListener('click', (e) => {
+    const userEl = e.target.closest('.selected-user');
+    if (!userEl) return;
+    
+    e.preventDefault();
+
+    selectedUser = getUsernameByName(userEl.textContent);
+
+    showTab('mymenu-tab', true);
+});
 
 /**************************************************** Board tab *************************************************/
 
@@ -1376,11 +1390,19 @@ function getUserNameById(username) {
     return user ? user.name : username;
 }
 
+// 사용자 이름으로 id 참조
+function getUsernameByName(name) {
+    const users = getUsers();
+    const user = users.find(u => u.name === name);
+    console.log(user.username);
+    return user ? user.username : null;
+}
+
 let currentTabId = null;
 let previousViewState = null;
 
 // 탭 전환 함수
-function showTab(tabId) {
+function showTab(tabId, viewerMode = false) {
     currentTabId = tabId;
     
     // 모든 탭 숨기기
@@ -1408,6 +1430,7 @@ function showTab(tabId) {
         const toggle = document.getElementById('sort-toggle');
         if (toggle) toggle.textContent = '최신순 ▾';
 
+        if (!viewerMode) selectedUser = getCurrentUser();
         initProfile();
         renderMyReviews();
         exitProfileEditMode();
