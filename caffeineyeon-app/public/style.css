@@ -712,3 +712,7 @@ nav {
 .initial-hidden {
   visibility: hidden;
 }
+
+.selected-user {
+    cursor: pointer;
+}
