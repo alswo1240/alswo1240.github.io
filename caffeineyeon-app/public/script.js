@@ -138,8 +138,8 @@ async function signup() {
         });
 
         await refreshMe();
-        enterAppUI();
         await init();
+        enterAppUI();
     } catch (e) {
         authError.textContent = e.message || '회원가입에 실패했습니다.';
     } 
@@ -161,8 +161,8 @@ async function login() {
         });
 
         await refreshMe();
-        enterAppUI();
         await init();
+        enterAppUI();
     } catch (e) {
         authError.textContent = e.message || '로그인에 실패했습니다.';
     }
@@ -233,8 +233,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (me) {
-        enterAppUI();
         await init();
+        enterAppUI();
     } else {
         showAuthUI();
         backToSelect();
