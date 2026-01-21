@@ -1499,7 +1499,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     showLoading();
 
     try {
-        await refreshMe();
+        await refreshMe().catch(() => {
+            me = null;
+        });
 
         if (me) {
             enterAppUI();
