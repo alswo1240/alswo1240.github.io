@@ -131,6 +131,8 @@ async function signup() {
     const ok = confirm("회원가입 하시겠습니까?");
     if (!ok) return;
 
+    showLoading();
+
     try {
         await apiFetch('/api/auth/signup', {
             method: 'POST',
@@ -138,10 +140,12 @@ async function signup() {
         });
 
         await refreshMe();
-        await init();
         enterAppUI();
+        await init();
     } catch (e) {
         authError.textContent = e.message || '회원가입에 실패했습니다.';
+    } finally {
+        hideLoading();
     }
 }
 
@@ -154,6 +158,8 @@ async function login() {
         return;
     }
 
+    showLoading();
+
     try {
         await apiFetch('/api/auth/login', {
             method: 'POST',
@@ -165,6 +171,8 @@ async function login() {
         enterAppUI();
     } catch (e) {
         authError.textContent = e.message || '로그인에 실패했습니다.';
+    } finally {
+        hideLoading();
     }
 }
 
@@ -1485,3 +1493,34 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 });
+
+// 새로고침 시 로딩 표시
+document.addEventListener("DOMContentLoaded", async () => {
+    showLoading();
+
+    try {
+        await refreshMe();
+
+        if (me) {
+            enterAppUI();
+            await init();
+        } else {
+            showAuthUI();
+            backToSelect();
+        }
+    } finally {
+        hideLoading();
+        document.getElementById('auth-root').style.visibility = 'visible';
+        document.getElementById('app-root').style.visibility = 'visible';
+    }
+});
+
+// 로딩 UI 제어
+function showLoading() {
+  document.getElementById('loading-root').classList.remove('hidden');
+}
+
+function hideLoading() {
+  document.getElementById('loading-root').classList.add('hidden');
+}
+
