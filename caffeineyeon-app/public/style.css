@@ -745,3 +745,13 @@ button:active {
     background: #e0e0e0;
     transform: scale(0.98);
 }
+
+#loading-root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: white;
+  z-index: 9999;
+}
