@@ -918,12 +918,21 @@ function renderMyReviews() {
 }
 
 // 리뷰 종류 선택 (원두, 레시피)
-document.querySelectorAll('.review-type-tabs button').forEach(btn => {
-    btn.onclick = () => {
-        myReviewType = btn.dataset.type;
-        setActive(btn, '.review-type-tabs');
-        renderMyReviews();
-    };
+function syncReviewTypeButtons() {
+    document.querySelectorAll('.review-type-tabs button').forEach(btn => {
+        const type = btn.dataset.type; // 'bean' or 'recipe'
+        btn.classList.toggle('active', type === myReviewType);
+  });
+}
+
+document.querySelector('.review-type-tabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-type]');
+    if (!btn) return;
+    
+    myReviewType = btn.dataset.type;
+    console.log(myReviewType);
+    syncReviewTypeButtons();
+    renderMyReviews();
 });
 
 // 리뷰 종류 선택 버튼 활성화
@@ -1179,7 +1188,7 @@ function openPostEditor(post = null) {
 
         editorTitle.value = '';
         editorContent.value = '';
-        selectedPostCategory = 'notice';
+        selectedPostCategory = 'free';
     }
     
     document.querySelectorAll('.editor-category button').forEach(btn => {
@@ -1290,7 +1299,8 @@ document.addEventListener('click', () => {
     boardSortMenu.classList.add('hidden');
 });
 
-let selectedPostCategory = 'notice';
+// 게시글 카테고리 기본값
+let selectedPostCategory = 'free';
 
 // 게시글 카테고리
 function getCategoryLabel(category) {
@@ -1424,6 +1434,8 @@ function showTab(tabId, viewerMode = false) {
 
         // ✅ 리뷰 정렬 상태 초기화
         myReviewSort = 'date';
+        myReviewType = 'bean';
+        syncReviewTypeButtons();
     
         // ✅ 정렬 토글 텍스트 초기화
         const toggle = document.getElementById('sort-toggle');
