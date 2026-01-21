@@ -583,10 +583,11 @@ nav {
 }
 
 .editor-category button.active,
-.board-category-filter button.active {
+.board-category-filter button.active, 
+.review-type-tabs button.active {
     background: #333;
     color: #fff;
-    border-radius: 3px;
+    border-radius: 6px;
 }
 
 .preserve-line {
@@ -715,12 +716,6 @@ nav {
 
 .selected-user {
     cursor: pointer;
-}
-
-.review-type-tabs button.active {
-    background: #333;
-    color: #fff;
-    border-radius: 3px;
 }
 
 button {
