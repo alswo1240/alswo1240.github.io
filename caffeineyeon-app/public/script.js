@@ -1494,6 +1494,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
+/*
 // 새로고침 시 로딩 표시
 document.addEventListener("DOMContentLoaded", async () => {
     showLoading();
@@ -1516,6 +1517,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById('app-root').style.visibility = 'visible';
     }
 });
+*/
 
 // 로딩 UI 제어
 function showLoading() {
