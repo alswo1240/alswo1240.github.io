@@ -352,9 +352,9 @@ async function saveAddForm(type) {
 
     const newItem = {
         id: Date.now(),
+        edited: null,
         name,
         info,
-        date,
         reviews: {}
     };
 
@@ -394,7 +394,7 @@ function openEditItemForm(id, type) {
 
         item.name = name;
         item.info = info;
-        item.date = getTodayDate() + '(수정됨)';
+        item.edited = Date.now();
 
         if (!confirm("수정한 내용을 저장하시겠습니까?")) return;
 
@@ -472,7 +472,7 @@ function renderPopupContent(itemData, type) {
                             <strong class="selected-user">${getUserNameById(username)}</strong>
                             <span class="review-rating">${'⭐'.repeat(review.rating)}</span>
                         </div>
-                        <span class="review-date">${review.date}</span>
+                        <span class="review-date">${displayDate(review)}</span>
                     </div>
             
                     <p class="review-text preserve-line">${review.text}</p>
@@ -502,7 +502,7 @@ function renderPopupContent(itemData, type) {
     popupContent.innerHTML = `
         <div class="info-card">
             <h3>${itemData.name}</h3>
-            <span class="info-date">${itemData.date}</span>
+            <span class="info-date">${displayDate(itemData)}</span>
             <p class="preserve-line">${itemData.info}</p>
         </div>
 
@@ -579,10 +579,10 @@ async function saveReview(id, type) {
     const currentUser = getCurrentUser();
     if (!currentUser) return alert("로그인이 필요합니다.");
 
-    const date = item.reviews && item.reviews[currentUser] ? getTodayDate() + '(수정됨)' : getTodayDate();
     const reviewId = item.reviews && item.reviews[currentUser] ? item.reviews[currentUser].id : Date.now();
+    const edited = item.reviews && item.reviews[currentUser] ? Date.now() : null;
     
-    item.reviews[currentUser] = { id: reviewId, rating, text,  date }
+    item.reviews[currentUser] = { id: reviewId, edited, rating, text }
 
     await DataStore.save(type === 'bean' ? 'beans' : 'recipes', list);
 
@@ -877,9 +877,9 @@ function collectMyReviewsByType(type) {
             results.push({
                 itemName: item.name,
                 id: review.id,
+                edited: review.edited, 
                 rating: review.rating,
-                text: review.text,
-                date: review.date
+                text: review.text
             });
         }
     });
@@ -908,7 +908,7 @@ function renderMyReviews() {
 
         card.innerHTML = `
             <div class="my-review-header">${r.itemName}</div>
-            <div class="my-review-date">${r.date}</div>
+            <div class="my-review-date">${displayDate(r)}</div>
             <div class="my-review-star">${'⭐'.repeat(r.rating)}</div>
             <div class="preserve-line">${r.text}</div>
         `;
@@ -1070,7 +1070,7 @@ function renderPostList() {
         div.innerHTML = `
             <div class="post-category">${getCategoryLabel(post.category)}</div>
             <h3>${post.title}</h3>
-            <p class="post-meta">${getUserNameById(post.author)} · ${post.createdAt}</p>
+            <p class="post-meta">${getUserNameById(post.author)} · ${displayDate(post)}</p>
         `;
 
         list.appendChild(div);
@@ -1093,7 +1093,7 @@ function openPostDetail(postId) {
     container.innerHTML = `
         <div class="post-category">${getCategoryLabel(post.category)}</div>
         <h2 class="post-title">${post.title}</h2>
-        <p class="post-meta">${getUserNameById(post.author)} · ${post.createdAt}</p>
+        <p class="post-meta">${getUserNameById(post.author)} · ${displayDate(post)}</p>
         <div class="post-images">${imagesHTML}</div>
         <div class="post-content preserve-line">${post.content}</div>
     `;
@@ -1239,21 +1239,20 @@ document.getElementById('save-post-btn').onclick = () => {
         currentPostId = postId;
         posts.push({
             id: postId,
+            edited: null,
             title,
             content,
             images: editorImages,
             category: selectedPostCategory,
-            author: getCurrentUser(),
-            createdAt: getTodayDate()
+            author: getCurrentUser()
         });
     } else {
         const post = posts.find(p => p.id === editingPostId);
+        post.edited = Date.now();
         post.title = title;
         post.content = content;
         post.images = editorImages;
         post.category = selectedPostCategory;
-        post.createdAt = getTodayDate() + '(수정됨)';
-        post.updatedAt = getTodayDate();
     }
 
     savePosts(posts);
@@ -1392,6 +1391,17 @@ function removeEditorImage(index) {
 // 오늘 날짜 얻기 (2025-01-18 형식으로)
 function getTodayDate() {
     return new Date().toISOString().slice(0, 10);
+}
+
+// ID 에서 날짜 얻기
+function formatDateFromId(id) {
+    return new Date(id).toISOString().slice(0, 10);
+}
+
+// 수정된 게시물 표시하기
+function displayDate(item) {
+    const date = formatDateFromId(item.id);
+    return !item.edited ? date : date + '(수정됨)';
 }
 
 // 사용자 id로 이름 참조
