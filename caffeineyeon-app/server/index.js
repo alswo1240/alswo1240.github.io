@@ -201,15 +201,6 @@ app.put('/api/data/:type', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
-// --- Static frontend ---
-const publicDir = path.join(__dirname, '..', 'public');
-app.use(express.static(publicDir));
-
-// SPA fallback
-app.get('*', (req, res) => {
-  res.sendFile(path.join(publicDir, 'index.html'));
-});
-
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`CaffeineYeon server listening on ${port}`);
@@ -253,3 +244,11 @@ app.get('/api/admin/export', async (req, res) => {
   });
 });
 
+// --- Static frontend ---
+const publicDir = path.join(__dirname, '..', 'public');
+app.use(express.static(publicDir));
+
+// SPA fallback (✅ /api 로 시작하는 요청은 제외)
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(publicDir, 'index.html'));
+});
