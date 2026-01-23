@@ -395,7 +395,6 @@ function openEditItemForm(id, type) {
         item.name = name;
         item.info = info;
         item.edited = Date.now();
-        item.author = getCurrentUser();
 
         if (!confirm("수정한 내용을 저장하시겠습니까?")) return;
 
