@@ -216,3 +216,40 @@ app.listen(port, () => {
   // ✅ 필요하면 DB 경로 확인 로그(원할 때만)
   // console.log("DB PATH:", process.env.DB_PATH);
 });
+
+// ------ 서버: “DB 전체 덤프” Export API 만들기 -------
+
+// 맨 위 근처에
+const EXPORT_TOKEN = process.env.EXPORT_TOKEN;
+
+// 맨 아래 아무 API들 근처에 추가
+app.get('/api/admin/export', async (req, res) => {
+  const token = req.query.token;
+  if (!EXPORT_TOKEN || token !== EXPORT_TOKEN) {
+    return res.status(403).json({ ok: false, message: 'forbidden' });
+  }
+
+  // kv 테이블 전체를 읽어서 내보내기
+  db.all('SELECT key, value FROM kv ORDER BY key', [], (err, rows) => {
+    if (err) return res.status(500).json({ ok: false, message: 'db error' });
+
+    // users에 password가 평문으로 들어있다면, 시트로 내보낼 때 제거 권장
+    const cleaned = rows.map(r => {
+      if (r.key === 'users') {
+        try {
+          const users = JSON.parse(r.value);
+          const safeUsers = Array.isArray(users)
+            ? users.map(({ password, ...rest }) => rest)
+            : users;
+          return { key: r.key, value: JSON.stringify(safeUsers) };
+        } catch {
+          return r;
+        }
+      }
+      return r;
+    });
+
+    res.json({ ok: true, exportedAt: new Date().toISOString(), rows: cleaned });
+  });
+});
+
