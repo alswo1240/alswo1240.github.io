@@ -346,7 +346,6 @@ function renderAll() {
 async function saveAddForm(type) {
     const name = document.getElementById('add-name').value.trim();
     const info = document.getElementById('add-info').value.trim();
-    const date = getTodayDate();
 
     if (!name) return alert('이름을 입력하세요.');
 
@@ -355,6 +354,7 @@ async function saveAddForm(type) {
         edited: null,
         name,
         info,
+        author: getCurrentUser(),
         reviews: {}
     };
 
@@ -395,6 +395,7 @@ function openEditItemForm(id, type) {
         item.name = name;
         item.info = info;
         item.edited = Date.now();
+        item.author = getCurrentUser();
 
         if (!confirm("수정한 내용을 저장하시겠습니까?")) return;
 
