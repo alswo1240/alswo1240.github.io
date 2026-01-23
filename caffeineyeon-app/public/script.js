@@ -499,6 +499,7 @@ function renderPopupContent(itemData, type) {
     }
 
     const canWriteReview = currentUser && !reviews[currentUser];
+    const isItemAuthor = currentUser && itemData.author === currentUser;
 
     popupContent.innerHTML = `
         <div class="info-card">
@@ -508,10 +509,16 @@ function renderPopupContent(itemData, type) {
         </div>
 
         <!-- 🔧 아이템 관리 버튼 -->
-        <div class="item-actions">
-            <button onclick="openEditItemForm(${itemData.id}, '${type}')">수정</button>
-            <button onclick="deleteItem(${itemData.id}, '${type}')">삭제</button>
-        </div>
+        ${
+            isItemAuthor
+                ? `
+                <div class="item-actions">
+                    <button onclick="openEditItemForm(${itemData.id}, '${type}')">수정</button>
+                    <button onclick="deleteItem(${itemData.id}, '${type}')">삭제</button>
+                </div>
+                `
+                : ''
+        }
 
         <hr>
 
