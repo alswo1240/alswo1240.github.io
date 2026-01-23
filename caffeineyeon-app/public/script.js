@@ -503,7 +503,7 @@ function renderPopupContent(itemData, type) {
     popupContent.innerHTML = `
         <div class="info-card">
             <h3>${itemData.name}</h3>
-            <span class="info-date">${displayDate(itemData)}</span>
+            <span class="info-date">${getUserNameById(itemData.author)} · ${displayDate(itemData)}</span>
             <p class="preserve-line">${itemData.info}</p>
         </div>
 
