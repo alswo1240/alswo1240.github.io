@@ -233,6 +233,9 @@ async function boot() {
     await refreshMe();
     await init();
     enterAppUI();
+
+    document.getElementById('auth-root').style.visibility = 'visible';
+    document.getElementById('app-root').style.visibility = 'visible';
 }
 
 // 로그인 여부에 따라 auth, app 화면 중 보여줄 화면 결정
@@ -950,7 +953,6 @@ document.querySelector('.review-type-tabs').addEventListener('click', (e) => {
     if (!btn) return;
     
     myReviewType = btn.dataset.type;
-    console.log(myReviewType);
     syncReviewTypeButtons();
     renderMyReviews();
 });
