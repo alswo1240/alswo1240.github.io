@@ -147,7 +147,7 @@ async function signup() {
             body: JSON.stringify({ name, username, password })
         });
         
-        //await refreshMe();
+        await refreshMe();
         await boot();
     } catch (e) {
         authError.textContent = e.message || '회원가입에 실패했습니다.';
@@ -176,10 +176,10 @@ async function login() {
         
         console.log('login api:', performance.now() - t0);
 
-        //const t1 = performance.now();
+        const t1 = performance.now();
 
-        //await refreshMe();
-        //console.log('refreshMe:', performance.now() - t1);
+        await refreshMe();
+        console.log('refreshMe:', performance.now() - t1);
         
         const t2 = performance.now();
         await boot();
