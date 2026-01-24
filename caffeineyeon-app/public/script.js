@@ -230,9 +230,12 @@ async function boot() {
     if (appInitialized) return;
     appInitialized = true;
 
+    enterAppUI();
+    document.getElementById('auth-root').style.visibility = 'visible';
+    document.getElementById('app-root').style.visibility = 'visible';
+
     await refreshMe();
     await init();
-    enterAppUI();
 }
 
 // 로그인 여부에 따라 auth, app 화면 중 보여줄 화면 결정
