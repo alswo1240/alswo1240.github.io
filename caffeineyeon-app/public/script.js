@@ -88,7 +88,7 @@ async function init() {
     postsCache = postsData;
 
     renderAll();
-    showTab('cdm-tab');
+    //showTab('cdm-tab');
 }
 
 /**************************************************** 계정 관련 *************************************************/
@@ -235,9 +235,12 @@ let appInitialized = false;
 async function boot() {
     if (appInitialized) return;
     appInitialized = true;
+
+    renderAll();
+    showTab('cdm-tab');
+    enterAppUI();
     
     await init();
-    enterAppUI();
 }
 
 // 로그인 여부에 따라 auth, app 화면 중 보여줄 화면 결정
