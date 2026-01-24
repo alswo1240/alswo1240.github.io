@@ -12,6 +12,7 @@ let postsCache = [];
 
 /**************************************************** 세션 *************************************************/
 async function apiFetch(path, options = {}) {
+    const t0 = performance.now();
     const res = await fetch(path, {
         credentials: 'include',
         headers: {
@@ -20,6 +21,8 @@ async function apiFetch(path, options = {}) {
         },
         ...options
     });
+    console.log('fetch:', path, performance.now() - t0);
+    const t1 = performance.now();
 
     let payload = null;
     try {
@@ -27,6 +30,7 @@ async function apiFetch(path, options = {}) {
     } catch {
         // ignore
     }
+    console.log('json parse:', path, performance.now() - t1);
 
     if (!res.ok) {
         const msg = payload?.message || `요청 실패 (${res.status})`;
@@ -159,14 +163,26 @@ async function login() {
         return;
     }
 
+    const t0 = performance.now();
+    console.log('LOGIN CLICK');
+
     try {
         await apiFetch('/api/auth/login', {
             method: 'POST',
             body: JSON.stringify({ username, password })
         });
+        console.log('login api:', performance.now() - t0);
+
+        authError.textContent = "로그인 중...";
+
+        const t1 = performance.now();
+
         
         await refreshMe();
+        console.log('refreshMe:', performance.now() - t1);
+        const t2 = performance.now();
         await boot();
+        console.log('boot:', performance.now() - t2);
     } catch (e) {
         authError.textContent = e.message || '로그인에 실패했습니다.';
     }
