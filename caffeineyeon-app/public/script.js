@@ -168,32 +168,11 @@ async function login() {
 
     try {
         authError.textContent = "로그인 중...";
-        /*
+        
         await apiFetch('/api/auth/login', {
             method: 'POST',
             body: JSON.stringify({ username, password })
         });
-        */
-
-        // 2️⃣ login API: 응답 body를 읽지 않음
-        const res = await fetch('/api/auth/login', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ username, password })
-        });
-
-        if (!res.ok) {
-            // 실패한 경우에만 body를 읽음
-            let msg = '로그인에 실패했습니다.';
-            try {
-                const err = await res.json();
-                msg = err.message || msg;
-            } catch {}
-            throw new Error(msg);
-        }
         
         console.log('login api:', performance.now() - t0);
 
