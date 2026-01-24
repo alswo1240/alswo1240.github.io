@@ -92,7 +92,7 @@ async function init() {
     postsCache = postsData;
 
     renderAll();
-    //showTab('cdm-tab');
+    showTab('cdm-tab');
 }
 
 /**************************************************** 계정 관련 *************************************************/
@@ -147,7 +147,7 @@ async function signup() {
             body: JSON.stringify({ name, username, password })
         });
         
-        await refreshMe();
+        //await refreshMe();
         await boot();
     } catch (e) {
         authError.textContent = e.message || '회원가입에 실패했습니다.';
@@ -167,19 +167,41 @@ async function login() {
     console.log('LOGIN CLICK');
 
     try {
+        authError.textContent = "로그인 중...";
+        /*
         await apiFetch('/api/auth/login', {
             method: 'POST',
             body: JSON.stringify({ username, password })
         });
+        */
+
+        // 2️⃣ login API: 응답 body를 읽지 않음
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        });
+
+        if (!res.ok) {
+            // 실패한 경우에만 body를 읽음
+            let msg = '로그인에 실패했습니다.';
+            try {
+                const err = await res.json();
+                msg = err.message || msg;
+            } catch {}
+            throw new Error(msg);
+        }
+        
         console.log('login api:', performance.now() - t0);
 
-        authError.textContent = "로그인 중...";
+        //const t1 = performance.now();
 
-        const t1 = performance.now();
-
+        //await refreshMe();
+        //console.log('refreshMe:', performance.now() - t1);
         
-        await refreshMe();
-        console.log('refreshMe:', performance.now() - t1);
         const t2 = performance.now();
         await boot();
         console.log('boot:', performance.now() - t2);
@@ -252,11 +274,8 @@ async function boot() {
     if (appInitialized) return;
     appInitialized = true;
 
-    renderAll();
-    showTab('cdm-tab');
-    enterAppUI();
-    
     await init();
+    enterAppUI();
 }
 
 // 로그인 여부에 따라 auth, app 화면 중 보여줄 화면 결정
