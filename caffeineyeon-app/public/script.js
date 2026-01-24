@@ -142,7 +142,8 @@ async function signup() {
             method: 'POST',
             body: JSON.stringify({ name, username, password })
         });
-
+        
+        await refreshMe();
         await boot();
     } catch (e) {
         authError.textContent = e.message || '회원가입에 실패했습니다.';
@@ -163,7 +164,8 @@ async function login() {
             method: 'POST',
             body: JSON.stringify({ username, password })
         });
-
+        
+        await refreshMe();
         await boot();
     } catch (e) {
         authError.textContent = e.message || '로그인에 실패했습니다.';
@@ -181,8 +183,12 @@ async function logout() {
     }
 
     me = null;
+    beans = [];
+    recipes = [];
     usersCache = [];
     postsCache = [];
+
+    appInitialized = false;
 
     // auth 화면 초기화
     resetAuthView();
@@ -230,12 +236,8 @@ async function boot() {
     if (appInitialized) return;
     appInitialized = true;
     
-    await refreshMe();
     await init();
     enterAppUI();
-
-    document.getElementById('auth-root').style.visibility = 'visible';
-    document.getElementById('app-root').style.visibility = 'visible';
 }
 
 // 로그인 여부에 따라 auth, app 화면 중 보여줄 화면 결정
