@@ -75,11 +75,17 @@ const DataStore = {
 // 초기 로드
 async function init() {
     // 로그인 후에만 호출
-    await refreshUsers();
-
-    beans = await DataStore.load('beans') || [];
-    recipes = await DataStore.load('recipes') || [];
-    postsCache = await DataStore.load('posts') || [];
+    
+    const [users, beansData, recipesData, postsData] = await Promise.all([
+        refreshUsers(),
+        DataStore.load('beans'),
+        DataStore.load('recipes'),
+        DataStore.load('posts')
+    ]);
+    
+    beans = beansData;
+    recipes = recipesData;
+    postsCache = postsData;
 
     renderAll();
     showTab('cdm-tab');
@@ -137,9 +143,7 @@ async function signup() {
             body: JSON.stringify({ name, username, password })
         });
 
-        await refreshMe();
-        await init();
-        enterAppUI();
+        await boot();
     } catch (e) {
         authError.textContent = e.message || '회원가입에 실패했습니다.';
     } 
@@ -160,9 +164,7 @@ async function login() {
             body: JSON.stringify({ username, password })
         });
 
-        await refreshMe();
-        await init();
-        enterAppUI();
+        await boot();
     } catch (e) {
         authError.textContent = e.message || '로그인에 실패했습니다.';
     }
@@ -222,20 +224,30 @@ function resetAuthView() {
     backToSelect();
 }
 
+let appInitialized = false;
+
+async function boot() {
+    if (appInitialized) return;
+    appInitialized = true;
+
+    await refreshMe();
+    await init();
+    enterAppUI();
+}
+
 // 로그인 여부에 따라 auth, app 화면 중 보여줄 화면 결정
 document.addEventListener("DOMContentLoaded", async () => {
     authError = document.getElementById("auth-error");
 
     try {
         await refreshMe();
+        if (me) {
+            await boot();
+        } else {
+            showAuthUI();
+            backToSelect();
+        }
     } catch {
-        me = null;
-    }
-
-    if (me) {
-        await init();
-        enterAppUI();
-    } else {
         showAuthUI();
         backToSelect();
     }
@@ -337,6 +349,7 @@ function closeOpenForm() {
     openFormRef = null;
 }
 
+// 아이템(원두, 레시피) 모두 렌더
 function renderAll() {
     renderList(beans, 'bean-list', 'bean');
     renderList(recipes, 'recipe-list', 'recipe');
