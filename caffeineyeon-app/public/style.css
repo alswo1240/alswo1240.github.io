@@ -383,6 +383,16 @@ nav {
     text-align: left;
 }
 
+@media (max-width: 600px) {
+    .review-masonry {
+        display: block;
+        gap: 16px;
+    }
+    .my-review-card {
+        margin-bottom: 14px;
+    }
+}
+
 .my-review-header {
     font-weight: bold;
     margin-bottom: 5px;
