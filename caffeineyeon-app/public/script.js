@@ -142,6 +142,8 @@ async function signup() {
     if (!ok) return;
 
     try {
+        authError.textContent = "회원가입 중...";
+        
         await apiFetch('/api/auth/signup', {
             method: 'POST',
             body: JSON.stringify({ name, username, password })
