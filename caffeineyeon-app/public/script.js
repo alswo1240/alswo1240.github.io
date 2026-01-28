@@ -518,7 +518,7 @@ function renderPopupContent(itemData, type) {
                         username === currentUser
                             ? `
                                 <div class="review-actions">
-                                    <button onclick="openReviewForm(${itemData.id}, '${type}')">
+                                    <button onclick="openReviewEditForm(${itemData.id}, '${type}')">
                                         리뷰 수정
                                     </button>
                                     <button class="danger"
@@ -585,10 +585,13 @@ function openReviewForm(id, type) {
         </div>
         <textarea id="review-text"></textarea>
         <div>
-            <button onclick="saveReview(${id}, '${type}')">저장</button>
-            <button onclick="closeReviewForm()">취소</button>
+            <button id="review-save">저장</button>
+            <button id="review-cancel">취소</button>
         </div>
     `;
+
+    form.querySelector('#review-save').onclick = () => saveReview(id, type);
+    form.querySelector('#review-cancel').onclick = closeReviewForm;
 
     form.querySelectorAll('.star').forEach(star => {
         star.onclick = e => {
@@ -602,6 +605,57 @@ function openReviewForm(id, type) {
 
     popupContent.appendChild(form);
     openFormRef = { type: 'review', element: form };
+
+    return form;
+}
+
+// 리뷰 수정 폼 열기
+async function openReviewEditForm(id, type) {
+    const list = type === 'bean' ? beans : recipes;
+    const item = list.find(i => i.id === id);
+
+    const currentUser = getCurrentUser();
+    if (!currentUser) return alert("로그인이 필요합니다.");
+
+    const review = item.reviews[currentUser];
+    if (!review) return alert("수정할 리뷰가 없습니다.");
+
+    const form = openReviewForm(id, type);
+
+    // 기존 데이터 반영
+    form.querySelectorAll('.star').forEach(star => {
+        star.classList.toggle('active', +star.dataset.value <= review.rating);
+    });
+    form.querySelector('#review-text').value = review.text;
+    
+    // 저장 버튼 덮어쓰기
+    form.querySelector('#review-save').onclick = async () => {
+        const rating = form.querySelectorAll('.star.active').length;
+        const text = form.querySelector('#review-text').value.trim();
+
+        if (!rating || !text) {
+            alert('별점과 코멘트를 모두 입력하세요.');
+            return;
+        }
+
+        if (!confirm("수정한 내용을 저장하시겠습니까?")) return;
+
+        review.rating = rating;
+        review.text = text;
+        review.edited = Date.now();
+
+        await DataStore.save(type === 'bean' ? 'beans' : 'recipes', list);
+
+        closeReviewForm();
+        renderAll();
+
+        // ⭐ 팝업 즉시 갱신
+        const card = document.querySelector(
+            `.item-card[data-id="${id}"][data-type="${type}"]`
+        );
+        if (card) openPopup(card, item, type);
+    };
+    openFormRef = { type: 'edit-review', element: form };
 }
 
 // 리뷰 입력 폼 닫기
@@ -623,10 +677,7 @@ async function saveReview(id, type) {
     const currentUser = getCurrentUser();
     if (!currentUser) return alert("로그인이 필요합니다.");
 
-    const reviewId = item.reviews && item.reviews[currentUser] ? item.reviews[currentUser].id : Date.now();
-    const edited = item.reviews && item.reviews[currentUser] ? Date.now() : null;
-    
-    item.reviews[currentUser] = { id: reviewId, edited, rating, text }
+    item.reviews[currentUser] = { id: Date.now(), edited: null, rating, text }
 
     await DataStore.save(type === 'bean' ? 'beans' : 'recipes', list);
 
