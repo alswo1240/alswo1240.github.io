@@ -27,8 +27,7 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: 'auto',
-      maxAge: 10 * 1000
+      secure: 'auto'
     }
   })
 );
