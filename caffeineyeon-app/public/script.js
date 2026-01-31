@@ -32,6 +32,11 @@ async function apiFetch(path, options = {}) {
     }
     console.log('json parse:', path, performance.now() - t1);
 
+    if (res.status === 401) {
+        handleSessionExpired();
+        throw new Error("세션이 만료되었습니다.");
+    }
+
     if (!res.ok) {
         const msg = payload?.message || `요청 실패 (${res.status})`;
         throw new Error(msg);
@@ -75,6 +80,17 @@ const DataStore = {
         });
     }
 };
+
+// 세션 만료 시 로그인 화면으로 전환
+let handlingSessionExpire = false;
+
+function handleSessionExpired() {
+    if (handlingSessionExpire) return;
+    handlingSessionExpire = true;
+
+    alert("로그인이 만료되었습니다.");
+    clearClientState();
+}
 
 // 초기 로드
 async function init() {
@@ -191,6 +207,19 @@ async function login() {
     }
 }
 
+// 로그아웃, 세션 만료 시 공용으로 호출
+function clearClientState() {
+    me = null;
+    beans = [];
+    recipes = [];
+    usersCache = [];
+    postsCache = [];
+    appInitialized = false;
+
+    resetAuthView();
+    showAuthUI();
+}
+
 async function logout() {
     const ok = confirm("로그아웃 하시겠습니까?");
     if (!ok) return;
@@ -201,20 +230,7 @@ async function logout() {
         // ignore
     }
 
-    me = null;
-    beans = [];
-    recipes = [];
-    usersCache = [];
-    postsCache = [];
-
-    appInitialized = false;
-
-    // auth 화면 초기화
-    resetAuthView();
-
-    // 홈 → 로그인 화면 전환
-    document.getElementById("app-root").style.display = "none";
-    document.getElementById("auth-root").style.display = "flex";
+    clearClientState();
 }
 
 function enterAppUI() {
@@ -1110,8 +1126,7 @@ function loadPosts() {
 
 function savePosts(posts) {
     postsCache = posts;
-    // 서버에 저장 (비동기: UI는 즉시 반영)
-    DataStore.save('posts', postsCache).catch(() => {});
+    DataStore.save('posts', postsCache);
 }
 
 function getPostById(id) {
