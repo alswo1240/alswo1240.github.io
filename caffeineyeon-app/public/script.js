@@ -422,7 +422,7 @@ async function saveAddForm(type) {
 }
 
 // 아이템 정보 수정
-async function openEditItemForm(id, type) {
+function openEditItemForm(id, type) {
     const list = type === 'bean' ? beans : recipes;
     const item = list.find(i => i.id === id);
     if (!item) return;
@@ -441,7 +441,7 @@ async function openEditItemForm(id, type) {
     infoInput.value = item.info;
 
     // ✅ 저장 버튼 동작 덮어쓰기 (push ❌)
-    saveBtn.onclick = () => {
+    saveBtn.onclick = async () => {
         const name = nameInput.value.trim();
         const info = infoInput.value.trim();
         if (!name) return;
