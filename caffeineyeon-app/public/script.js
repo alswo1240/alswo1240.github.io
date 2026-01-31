@@ -422,7 +422,7 @@ async function saveAddForm(type) {
 }
 
 // 아이템 정보 수정
-function openEditItemForm(id, type) {
+async function openEditItemForm(id, type) {
     const list = type === 'bean' ? beans : recipes;
     const item = list.find(i => i.id === id);
     if (!item) return;
@@ -453,9 +453,9 @@ function openEditItemForm(id, type) {
         if (!confirm("수정한 내용을 저장하시겠습니까?")) return;
 
         if (type === 'bean') {
-            DataStore.save('beans', beans);
+            await DataStore.save('beans', beans);
         } else {
-            DataStore.save('recipes', recipes);
+            await DataStore.save('recipes', recipes);
         }
         renderAll();
         openFormRef.type = 'add';
@@ -465,15 +465,15 @@ function openEditItemForm(id, type) {
 }
 
 // 아이템 삭제
-function deleteItem(id, type) {
+async function deleteItem(id, type) {
     if (!confirm("정말 삭제하시겠습니까?")) return;
 
     if (type === 'bean') {
         beans = beans.filter(b => b.id !== id);
-        DataStore.save('beans', beans);
+        await DataStore.save('beans', beans);
     } else {
         recipes = recipes.filter(r => r.id !== id);
-        DataStore.save('recipes', recipes);
+        await DataStore.save('recipes', recipes);
     }
     
     popup.classList.add('hidden');
@@ -709,7 +709,7 @@ async function saveReview(id, type) {
 }
 
 // 리뷰 삭제
-function deleteReview(itemId, type) {
+async function deleteReview(itemId, type) {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
 
@@ -724,7 +724,7 @@ function deleteReview(itemId, type) {
     delete item.reviews[currentUser];
 
     // 저장
-    DataStore.save(type === 'bean' ? 'beans' : 'recipes', items);
+    await DataStore.save(type === 'bean' ? 'beans' : 'recipes', items);
 
     // UI 즉시 반영
     renderAll();
@@ -1316,11 +1316,11 @@ document.getElementById('edit-post-btn').onclick = () => {
 };
 
 // 게시글 삭제
-function deletePost(id) {
+async function deletePost(id) {
     if (!confirm('게시글을 삭제할까요?')) return;
 
     const posts = loadPosts().filter(p => p.id !== id);
-    savePosts(posts);
+    await savePosts(posts);
 
     renderPostList();
     showBoardView('list');
@@ -1333,7 +1333,7 @@ document.getElementById('delete-post-btn').onclick = () => {
 };
 
 // 게시글 저장 버튼
-document.getElementById('save-post-btn').onclick = () => {
+document.getElementById('save-post-btn').onclick = async () => {
     const title = editorTitle.value.trim();
     const content = editorContent.value.trim();
 
@@ -1365,7 +1365,7 @@ document.getElementById('save-post-btn').onclick = () => {
         post.category = selectedPostCategory;
     }
 
-    savePosts(posts);
+    await savePosts(posts);
     renderPostList();
     currentPage = 'detail';
     openPostDetail(currentPostId);
