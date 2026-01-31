@@ -21,8 +21,6 @@ async function apiFetch(path, options = {}) {
         },
         ...options
     });
-    console.log('fetch:', path, performance.now() - t0);
-    const t1 = performance.now();
 
     let payload = null;
     try {
@@ -30,8 +28,7 @@ async function apiFetch(path, options = {}) {
     } catch {
         // ignore
     }
-    console.log('json parse:', path, performance.now() - t1);
-
+    
     if (res.status === 401) {
         handleSessionExpired();
         throw new Error("세션이 만료되었습니다.");
@@ -164,6 +161,8 @@ async function signup() {
             method: 'POST',
             body: JSON.stringify({ name, username, password })
         });
+
+        handlingSessionExpire = false;
         
         await refreshMe();
         await boot();
@@ -181,9 +180,6 @@ async function login() {
         return;
     }
 
-    const t0 = performance.now();
-    console.log('LOGIN CLICK');
-
     try {
         authError.textContent = "로그인 중...";
         
@@ -191,17 +187,11 @@ async function login() {
             method: 'POST',
             body: JSON.stringify({ username, password })
         });
-        
-        console.log('login api:', performance.now() - t0);
 
-        const t1 = performance.now();
+        handlingSessionExpire = false;
 
         await refreshMe();
-        console.log('refreshMe:', performance.now() - t1);
-        
-        const t2 = performance.now();
         await boot();
-        console.log('boot:', performance.now() - t2);
     } catch (e) {
         authError.textContent = e.message || '로그인에 실패했습니다.';
     }
