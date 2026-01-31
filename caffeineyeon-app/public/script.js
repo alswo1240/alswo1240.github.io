@@ -49,7 +49,7 @@ async function refreshMe() {
 
 async function refreshUsers() {
     // 로그인 필요
-    const r = await ('/api/users');
+    const r = await apiFetch('/api/users');
     usersCache = r.users || [];
     return usersCache;
 }
@@ -65,13 +65,13 @@ function getCurrentUser() {
 // DataStore (서버 저장) 
 const DataStore = {
     async load(type) {
-        const r = await (`/api/data/${type}`);
+        const r = await apiFetch(`/api/data/${type}`);
         const data = r.data || [];
         data.forEach(d => d.reviews ??= {});
         return data;
     },
     async save(type, data) {
-        await (`/api/data/${type}`, {
+        await apiFetch(`/api/data/${type}`, {
             method: 'PUT',
             body: JSON.stringify(data)
         });
@@ -82,6 +82,11 @@ const DataStore = {
 let handlingSessionExpire = false;
 
 function handleSessionExpired() {
+    if (isAuthBooting) {
+        console.warn('Session expired ignored during auth boot');
+        return;
+    }
+    
     if (handlingSessionExpire) return;
     handlingSessionExpire = true;
 
@@ -157,7 +162,7 @@ async function signup() {
     try {
         authError.textContent = "회원가입 중...";
         
-        await ('/api/auth/signup', {
+        await apiFetch('/api/auth/signup', {
             method: 'POST',
             body: JSON.stringify({ name, username, password })
         });
@@ -171,6 +176,8 @@ async function signup() {
     } 
 }
 
+let isAuthBooting = false;
+
 async function login() {
     const username = document.getElementById("login-username").value.trim();
     const password = document.getElementById("login-password").value.trim();
@@ -180,10 +187,12 @@ async function login() {
         return;
     }
 
+    isAuthBooting = true;
+
     try {
         authError.textContent = "로그인 중...";
         
-        await ('/api/auth/login', {
+        await apiFetch('/api/auth/login', {
             method: 'POST',
             body: JSON.stringify({ username, password })
         });
@@ -194,6 +203,8 @@ async function login() {
         await boot();
     } catch (e) {
         authError.textContent = e.message || '로그인에 실패했습니다.';
+    } finally {
+        isAuthBooting = false;
     }
 }
 
@@ -215,7 +226,7 @@ async function logout() {
     if (!ok) return;
 
     try {
-        await ('/api/auth/logout', { method: 'POST' });
+        await apiFetch('/api/auth/logout', { method: 'POST' });
     } catch {
         // ignore
     }
@@ -1114,9 +1125,9 @@ function loadPosts() {
     return postsCache || [];
 }
 
-function savePosts(posts) {
+async function savePosts(posts) {
     postsCache = posts;
-    DataStore.save('posts', postsCache);
+    await DataStore.save('posts', postsCache);
 }
 
 function getPostById(id) {
