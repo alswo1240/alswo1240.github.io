@@ -1114,7 +1114,7 @@ function loadPosts() {
     return postsCache || [];
 }
 
-function savePosts(posts) {
+async function savePosts(posts) {
     postsCache = posts;
     await DataStore.save('posts', postsCache);
 }
