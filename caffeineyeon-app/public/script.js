@@ -49,7 +49,7 @@ async function refreshMe() {
 
 async function refreshUsers() {
     // 로그인 필요
-    const r = await apiFetch('/api/users');
+    const r = await ('/api/users');
     usersCache = r.users || [];
     return usersCache;
 }
@@ -65,13 +65,13 @@ function getCurrentUser() {
 // DataStore (서버 저장) 
 const DataStore = {
     async load(type) {
-        const r = await apiFetch(`/api/data/${type}`);
+        const r = await (`/api/data/${type}`);
         const data = r.data || [];
         data.forEach(d => d.reviews ??= {});
         return data;
     },
     async save(type, data) {
-        await apiFetch(`/api/data/${type}`, {
+        await (`/api/data/${type}`, {
             method: 'PUT',
             body: JSON.stringify(data)
         });
@@ -157,7 +157,7 @@ async function signup() {
     try {
         authError.textContent = "회원가입 중...";
         
-        await apiFetch('/api/auth/signup', {
+        await ('/api/auth/signup', {
             method: 'POST',
             body: JSON.stringify({ name, username, password })
         });
@@ -183,7 +183,7 @@ async function login() {
     try {
         authError.textContent = "로그인 중...";
         
-        await apiFetch('/api/auth/login', {
+        await ('/api/auth/login', {
             method: 'POST',
             body: JSON.stringify({ username, password })
         });
@@ -215,7 +215,7 @@ async function logout() {
     if (!ok) return;
 
     try {
-        await apiFetch('/api/auth/logout', { method: 'POST' });
+        await ('/api/auth/logout', { method: 'POST' });
     } catch {
         // ignore
     }
@@ -1116,7 +1116,7 @@ function loadPosts() {
 
 function savePosts(posts) {
     postsCache = posts;
-    DataStore.save('posts', postsCache);
+    await DataStore.save('posts', postsCache);
 }
 
 function getPostById(id) {
