@@ -12,7 +12,6 @@ let postsCache = [];
 
 /**************************************************** 세션 *************************************************/
 async function apiFetch(path, options = {}) {
-    const t0 = performance.now();
     const res = await fetch(path, {
         credentials: 'include',
         headers: {
@@ -31,7 +30,7 @@ async function apiFetch(path, options = {}) {
     
     if (res.status === 401) {
         handleSessionExpired();
-        throw new Error("세션이 만료되었습니다.");
+        throw new Error("SESSION_EXPIRED");
     }
 
     if (!res.ok) {
@@ -415,14 +414,15 @@ async function saveAddForm(type) {
     const list = type === 'bean' ? beans : recipes;
     list.push(newItem);
 
-    const t0 = performance.now();
-    await DataStore.save(type === 'bean' ? 'beans' : 'recipes', list);
-    console.log('save time', performance.now() - t0);
+    try {
+        await DataStore.save(type === 'bean' ? 'beans' : 'recipes', list);
+    } catch (e) {
+        if (e.message === "SESSION_EXPIRED") return;
+        throw e;
+    }
 
     closeOpenForm();
-    const t1 = performance.now();
     renderAll();
-    console.log('render time', performance.now() - t1);
 }
 
 // 아이템 정보 수정
@@ -456,11 +456,17 @@ function openEditItemForm(id, type) {
 
         if (!confirm("수정한 내용을 저장하시겠습니까?")) return;
 
-        if (type === 'bean') {
-            await DataStore.save('beans', beans);
-        } else {
-            await DataStore.save('recipes', recipes);
+        try {
+            if (type === 'bean') {
+                await DataStore.save('beans', beans);
+            } else {
+                await DataStore.save('recipes', recipes);
+            }
+        } catch (e) {
+            if (e?.message === "SESSION_EXPIRED") return;
+            throw e;
         }
+        
         renderAll();
         openFormRef.type = 'add';
         closeOpenForm();
@@ -471,15 +477,19 @@ function openEditItemForm(id, type) {
 // 아이템 삭제
 async function deleteItem(id, type) {
     if (!confirm("정말 삭제하시겠습니까?")) return;
-
-    if (type === 'bean') {
-        beans = beans.filter(b => b.id !== id);
-        await DataStore.save('beans', beans);
-    } else {
-        recipes = recipes.filter(r => r.id !== id);
-        await DataStore.save('recipes', recipes);
+    try {
+        if (type === 'bean') {
+            beans = beans.filter(b => b.id !== id);
+            await DataStore.save('beans', beans);
+        } else {
+            recipes = recipes.filter(r => r.id !== id);
+            await DataStore.save('recipes', recipes);
+        }
+    } catch (e) {
+        if (e.message === "SESSION_EXPIRED") return;
+        throw e;
     }
-    
+        
     popup.classList.add('hidden');
     renderAll();
 }
@@ -665,8 +675,13 @@ async function openReviewEditForm(id, type) {
         review.text = text;
         review.edited = Date.now();
 
-        await DataStore.save(type === 'bean' ? 'beans' : 'recipes', list);
-
+        try {
+            await DataStore.save(type === 'bean' ? 'beans' : 'recipes', list);
+        } catch (e) {
+            if (e.message === "SESSION_EXPIRED") return;
+            throw e;
+        }
+            
         closeReviewForm();
         renderAll();
 
@@ -700,8 +715,13 @@ async function saveReview(id, type) {
 
     item.reviews[currentUser] = { id: Date.now(), edited: null, rating, text }
 
-    await DataStore.save(type === 'bean' ? 'beans' : 'recipes', list);
-
+    try {
+        await DataStore.save(type === 'bean' ? 'beans' : 'recipes', list);
+    } catch (e) {
+        if (e.message === "SESSION_EXPIRED") return;
+        throw e;
+    }
+    
     closeReviewForm();
     renderAll();
 
@@ -728,8 +748,13 @@ async function deleteReview(itemId, type) {
     delete item.reviews[currentUser];
 
     // 저장
-    await DataStore.save(type === 'bean' ? 'beans' : 'recipes', items);
-
+    try {
+        await DataStore.save(type === 'bean' ? 'beans' : 'recipes', items);
+    } catch (e) {
+        if (e.message === "SESSION_EXPIRED") return;
+        throw e;
+    }
+    
     // UI 즉시 반영
     renderAll();
     renderPopupContent(item, type);
@@ -1131,7 +1156,12 @@ function loadPosts() {
 
 async function savePosts(posts) {
     postsCache = posts;
-    await DataStore.save('posts', postsCache);
+    try {
+        await DataStore.save('posts', postsCache);
+    } catch (e) {
+        if (e.message === "SESSION_EXPIRED") return;
+        throw e;
+    }
 }
 
 function getPostById(id) {
