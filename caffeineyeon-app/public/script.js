@@ -415,10 +415,14 @@ async function saveAddForm(type) {
     const list = type === 'bean' ? beans : recipes;
     list.push(newItem);
 
+    const t0 = performance.now();
     await DataStore.save(type === 'bean' ? 'beans' : 'recipes', list);
+    console.log('save time', performance.now() - t0);
 
     closeOpenForm();
+    const t1 = performance.now();
     renderAll();
+    console.log('render time', performance.now() - t1);
 }
 
 // 아이템 정보 수정
