@@ -62,20 +62,70 @@ function getCurrentUser() {
 }
 
 // DataStore (서버 저장) 
-const DataStore = {
-    async load(type) {
-        const r = await apiFetch(`/api/data/${type}`);
-        const data = r.data || [];
-        data.forEach(d => d.reviews ??= {});
-        return data;
+// ===================== Data APIs (row-based) =====================
+// NOTE: 기존 DataStore(배열 통째로 PUT) 방식은 성능 문제의 원인이므로 사용하지 않습니다.
+
+const ItemsAPI = {
+    // type: 'beans' | 'recipes'
+    async list(type) {
+        const r = await apiFetch(`/api/items/${type}`);
+        const items = r.items || [];
+        // server가 reviews를 포함하지 않는 경우 대비
+        items.forEach(it => it.reviews ??= {});
+        return items;
     },
-    async save(type, data) {
-        await apiFetch(`/api/data/${type}`, {
-            method: 'PUT',
-            body: JSON.stringify(data)
+    async create(type, item) {
+        const r = await apiFetch(`/api/items/${type}`, {
+            method: 'POST',
+            body: JSON.stringify(item)
         });
+        return r.item || item;
+    },
+    async update(type, id, patch) {
+        const r = await apiFetch(`/api/items/${type}/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(patch)
+        });
+        return r.item || null;
+    },
+    async remove(type, id) {
+        await apiFetch(`/api/items/${type}/${id}`, { method: 'DELETE' });
+    },
+    async upsertReview(type, id, review) {
+        const r = await apiFetch(`/api/items/${type}/${id}/reviews`, {
+            method: 'PUT',
+            body: JSON.stringify(review)
+        });
+        return r.review || review;
+    },
+    async deleteReview(type, id) {
+        await apiFetch(`/api/items/${type}/${id}/reviews`, { method: 'DELETE' });
     }
 };
+
+const PostsAPI = {
+    async list(limit = 200) {
+        const r = await apiFetch(`/api/posts?limit=${encodeURIComponent(limit)}`);
+        return r.posts || [];
+    },
+    async create(post) {
+        const r = await apiFetch('/api/posts', {
+            method: 'POST',
+            body: JSON.stringify(post)
+        });
+        return r; // {id}
+    },
+    async update(id, patch) {
+        await apiFetch(`/api/posts/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(patch)
+        });
+    },
+    async remove(id) {
+        await apiFetch(`/api/posts/${id}`, { method: 'DELETE' });
+    }
+};
+
 
 // 세션 만료 시 로그인 화면으로 전환
 let handlingSessionExpire = false;
@@ -96,14 +146,14 @@ function handleSessionExpired() {
 // 초기 로드
 async function init() {
     // 로그인 후에만 호출
-    
+
     const [users, beansData, recipesData, postsData] = await Promise.all([
         refreshUsers(),
-        DataStore.load('beans'),
-        DataStore.load('recipes'),
-        DataStore.load('posts')
+        ItemsAPI.list('beans'),
+        ItemsAPI.list('recipes'),
+        PostsAPI.list(200)
     ]);
-    
+
     beans = beansData;
     recipes = recipesData;
     postsCache = postsData;
@@ -407,18 +457,23 @@ async function saveAddForm(type) {
         edited: null,
         name,
         info,
-        author: getCurrentUser(),
-        reviews: {}
+        author: getCurrentUser()
     };
 
-    const list = type === 'bean' ? beans : recipes;
-    list.push(newItem);
+    const apiType = type === 'bean' ? 'beans' : 'recipes';
 
     try {
-        await DataStore.save(type === 'bean' ? 'beans' : 'recipes', list);
+        const created = await ItemsAPI.create(apiType, newItem);
+        // client cache 갱신
+        if (apiType === 'beans') {
+            beans.push({ ...created, reviews: created.reviews ?? {} });
+        } else {
+            recipes.push({ ...created, reviews: created.reviews ?? {} });
+        }
     } catch (e) {
         if (e.message === "SESSION_EXPIRED") return;
-        throw e;
+        alert(e.message || '저장에 실패했습니다.');
+        return;
     }
 
     closeOpenForm();
@@ -435,61 +490,62 @@ function openEditItemForm(id, type) {
     openAddForm(type);
 
     const form = openFormRef.element;
-
     const nameInput = form.querySelector('#add-name');
     const infoInput = form.querySelector('#add-info');
     const saveBtn = form.querySelector('#add-save');
 
-    // ✅ 기존 값 주입
+    // 기존 값 주입
     nameInput.value = item.name;
     infoInput.value = item.info;
 
-    // ✅ 저장 버튼 동작 덮어쓰기 (push ❌)
+    // 저장 버튼 동작 덮어쓰기
     saveBtn.onclick = async () => {
         const name = nameInput.value.trim();
         const info = infoInput.value.trim();
         if (!name) return;
 
-        item.name = name;
-        item.info = info;
-        item.edited = Date.now();
-
         if (!confirm("수정한 내용을 저장하시겠습니까?")) return;
 
+        const apiType = type === 'bean' ? 'beans' : 'recipes';
+        const patch = { name, info, edited: Date.now() };
+
         try {
-            if (type === 'bean') {
-                await DataStore.save('beans', beans);
-            } else {
-                await DataStore.save('recipes', recipes);
-            }
+            await ItemsAPI.update(apiType, id, patch);
         } catch (e) {
             if (e?.message === "SESSION_EXPIRED") return;
-            throw e;
+            alert(e.message || '수정에 실패했습니다.');
+            return;
         }
-        
+
+        item.name = name;
+        item.info = info;
+        item.edited = patch.edited;
+
         renderAll();
         openFormRef.type = 'add';
         closeOpenForm();
-        
     };
 }
 
 // 아이템 삭제
 async function deleteItem(id, type) {
     if (!confirm("정말 삭제하시겠습니까?")) return;
+
+    const apiType = type === 'bean' ? 'beans' : 'recipes';
+
     try {
+        await ItemsAPI.remove(apiType, id);
         if (type === 'bean') {
             beans = beans.filter(b => b.id !== id);
-            await DataStore.save('beans', beans);
         } else {
             recipes = recipes.filter(r => r.id !== id);
-            await DataStore.save('recipes', recipes);
         }
     } catch (e) {
         if (e.message === "SESSION_EXPIRED") return;
-        throw e;
+        alert(e.message || '삭제에 실패했습니다.');
+        return;
     }
-        
+
     popup.classList.add('hidden');
     renderAll();
 }
@@ -648,7 +704,7 @@ async function openReviewEditForm(id, type) {
     const currentUser = getCurrentUser();
     if (!currentUser) return alert("로그인이 필요합니다.");
 
-    const review = item.reviews[currentUser];
+    const review = item?.reviews?.[currentUser];
     if (!review) return alert("수정할 리뷰가 없습니다.");
 
     const form = openReviewForm(id, type);
@@ -658,7 +714,7 @@ async function openReviewEditForm(id, type) {
         star.classList.toggle('active', +star.dataset.value <= review.rating);
     });
     form.querySelector('#review-text').value = review.text;
-    
+
     // 저장 버튼 덮어쓰기
     form.querySelector('#review-save').onclick = async () => {
         const rating = form.querySelectorAll('.star.active').length;
@@ -671,26 +727,27 @@ async function openReviewEditForm(id, type) {
 
         if (!confirm("수정한 내용을 저장하시겠습니까?")) return;
 
-        review.rating = rating;
-        review.text = text;
-        review.edited = Date.now();
+        const payload = { rating, text, edited: Date.now() };
+        const apiType = type === 'bean' ? 'beans' : 'recipes';
 
         try {
-            await DataStore.save(type === 'bean' ? 'beans' : 'recipes', list);
+            const saved = await ItemsAPI.upsertReview(apiType, id, payload);
+            item.reviews[currentUser] = { ...payload, ...(saved || {}) };
         } catch (e) {
             if (e.message === "SESSION_EXPIRED") return;
-            throw e;
+            alert(e.message || '리뷰 수정에 실패했습니다.');
+            return;
         }
-            
+
         closeReviewForm();
         renderAll();
 
-        // ⭐ 팝업 즉시 갱신
         const card = document.querySelector(
             `.item-card[data-id="${id}"][data-type="${type}"]`
         );
         if (card) openPopup(card, item, type);
     };
+
     openFormRef = { type: 'edit-review', element: form };
 }
 
@@ -713,19 +770,21 @@ async function saveReview(id, type) {
     const currentUser = getCurrentUser();
     if (!currentUser) return alert("로그인이 필요합니다.");
 
-    item.reviews[currentUser] = { id: Date.now(), edited: null, rating, text }
+    const payload = { rating, text, edited: null };
 
+    const apiType = type === 'bean' ? 'beans' : 'recipes';
     try {
-        await DataStore.save(type === 'bean' ? 'beans' : 'recipes', list);
+        const saved = await ItemsAPI.upsertReview(apiType, id, payload);
+        item.reviews[currentUser] = { ...payload, ...(saved || {}) };
     } catch (e) {
         if (e.message === "SESSION_EXPIRED") return;
-        throw e;
+        alert(e.message || '리뷰 저장에 실패했습니다.');
+        return;
     }
-    
+
     closeReviewForm();
     renderAll();
 
-    // ⭐ 팝업 즉시 갱신
     const card = document.querySelector(
         `.item-card[data-id="${id}"][data-type="${type}"]`
     );
@@ -744,18 +803,17 @@ async function deleteReview(itemId, type) {
     const ok = confirm("리뷰를 삭제하시겠습니까?");
     if (!ok) return;
 
-    // ⭐ 리뷰 삭제
-    delete item.reviews[currentUser];
+    const apiType = type === 'bean' ? 'beans' : 'recipes';
 
-    // 저장
     try {
-        await DataStore.save(type === 'bean' ? 'beans' : 'recipes', items);
+        await ItemsAPI.deleteReview(apiType, itemId);
+        delete item.reviews[currentUser];
     } catch (e) {
         if (e.message === "SESSION_EXPIRED") return;
-        throw e;
+        alert(e.message || '리뷰 삭제에 실패했습니다.');
+        return;
     }
-    
-    // UI 즉시 반영
+
     renderAll();
     renderPopupContent(item, type);
 }
@@ -1154,14 +1212,9 @@ function loadPosts() {
     return postsCache || [];
 }
 
-async function savePosts(posts) {
-    postsCache = posts;
-    try {
-        await DataStore.save('posts', postsCache);
-    } catch (e) {
-        if (e.message === "SESSION_EXPIRED") return;
-        throw e;
-    }
+async function refreshPosts(limit = 200) {
+    postsCache = await PostsAPI.list(limit);
+    return postsCache;
 }
 
 function getPostById(id) {
@@ -1353,8 +1406,14 @@ document.getElementById('edit-post-btn').onclick = () => {
 async function deletePost(id) {
     if (!confirm('게시글을 삭제할까요?')) return;
 
-    const posts = loadPosts().filter(p => p.id !== id);
-    await savePosts(posts);
+    try {
+        await PostsAPI.remove(id);
+        await refreshPosts(200);
+    } catch (e) {
+        if (e.message === "SESSION_EXPIRED") return;
+        alert(e.message || '삭제에 실패했습니다.');
+        return;
+    }
 
     renderPostList();
     showBoardView('list');
@@ -1376,30 +1435,30 @@ document.getElementById('save-post-btn').onclick = async () => {
         return;
     }
 
-    const posts = loadPosts();
+    const payload = {
+        title,
+        content,
+        images: editorImages,
+        category: selectedPostCategory,
+        author: getCurrentUser()
+    };
 
-    if (editorMode === 'add') {
-        const postId = Date.now();
-        currentPostId = postId;
-        posts.push({
-            id: postId,
-            edited: null,
-            title,
-            content,
-            images: editorImages,
-            category: selectedPostCategory,
-            author: getCurrentUser()
-        });
-    } else {
-        const post = posts.find(p => p.id === editingPostId);
-        post.edited = Date.now();
-        post.title = title;
-        post.content = content;
-        post.images = editorImages;
-        post.category = selectedPostCategory;
+    try {
+        if (editorMode === 'add') {
+            const r = await PostsAPI.create(payload);
+            currentPostId = r.id || currentPostId;
+        } else {
+            await PostsAPI.update(editingPostId, payload);
+            currentPostId = editingPostId;
+        }
+
+        await refreshPosts(200);
+    } catch (e) {
+        if (e.message === "SESSION_EXPIRED") return;
+        alert(e.message || '저장에 실패했습니다.');
+        return;
     }
 
-    await savePosts(posts);
     renderPostList();
     currentPage = 'detail';
     openPostDetail(currentPostId);
