@@ -2,6 +2,7 @@ import sqlite3 from "sqlite3";
 import path from "node:path";
 import fs from "node:fs";
 
+
 // 1) verbose는 1번만, DB 열기 전에
 sqlite3.verbose();
 
